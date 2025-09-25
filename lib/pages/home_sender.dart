@@ -3,14 +3,16 @@ import 'package:dalivery_application/pages/user/bottom_navbar.dart';
 import 'package:flutter/material.dart';
 
 class SenderPage extends StatefulWidget {
-  const SenderPage({super.key});
+  final String name; 
+
+  const SenderPage({super.key, required this.name});
 
   @override
   State<SenderPage> createState() => _SenderPageState();
 }
 
 class _SenderPageState extends State<SenderPage> {
-  int selectedIndex = 0; // เพิ่มตัวแปรสำหรับ bottom navigation
+  int selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -27,6 +29,21 @@ class _SenderPageState extends State<SenderPage> {
               Navigator.pop(context);
             },
           ),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Center(
+                child: Text(
+                  widget.name, 
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
       body: Padding(
@@ -65,10 +82,7 @@ class _SenderPageState extends State<SenderPage> {
               ),
               child: Container(
                 height: 120, 
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 12,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 child: Row(
                   children: [
                     const CircleAvatar(

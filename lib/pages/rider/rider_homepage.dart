@@ -1,5 +1,6 @@
 import 'package:dalivery_application/pages/rider/bottom_navbar.dart';
 import 'package:flutter/material.dart';
+import 'package:dalivery_application/services/user_preferences.dart';
 
 class RiderHomepage extends StatefulWidget {
   const RiderHomepage({super.key});
@@ -10,11 +11,25 @@ class RiderHomepage extends StatefulWidget {
 
 class _RiderHomepageState extends State<RiderHomepage> {
   int _selectedIndex = 0;
+  String? riderName; // เก็บชื่อผู้ใช้
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRiderName();
+  }
+
+  Future<void> _loadRiderName() async {
+    final data = await UserPreferences.loadUserData();
+    setState(() {
+      riderName = data['name'] ?? 'Rider';
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
           'หน้าหลัก',
@@ -26,17 +41,37 @@ class _RiderHomepageState extends State<RiderHomepage> {
         ),
         backgroundColor: const Color(0xffCC0033),
         automaticallyImplyLeading: false,
+        actions: [
+          if (riderName != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Center(
+                child: Text(
+                  riderName!,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
       body: SingleChildScrollView(),
       bottomNavigationBar: MainBottomNavRider(
-        selectedIndex: _selectedIndex, // ตัวแปรเก็บตำแหน่งของปุ่มที่เลือก
+        selectedIndex: _selectedIndex,
         onDestinationSelected: (int index) {
           setState(() {
-            _selectedIndex = index; // อัปเดตตำแหน่งของปุ่มที่เลือก
+            _selectedIndex = index;
           });
         },
         screenSize: MediaQuery.of(context).size,
-        onTap: (int) {}, // ขนาดหน้าจอปัจจุบัน
+        onTap: (int index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
       ),
     );
   }

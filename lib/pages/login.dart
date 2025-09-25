@@ -8,7 +8,6 @@ import 'package:http/http.dart' as http;
 import 'package:dalivery_application/config/config.dart';
 import 'package:dalivery_application/config/internal_config.dart';
 
-
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -26,14 +25,12 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    Configuration.getConfig()
-        .then((value) {
-          url = value['apiEndpoint'];
-          log("API Endpoint: $url");
-        })
-        .catchError((err) {
-          log("Config error: ${err.toString()}");
-        });
+    Configuration.getConfig().then((value) {
+      url = value['apiEndpoint'];
+      log("API Endpoint: $url");
+    }).catchError((err) {
+      log("Config error: ${err.toString()}");
+    });
   }
 
   @override
@@ -64,26 +61,17 @@ class _LoginPageState extends State<LoginPage> {
             child: Container(
               width: double.infinity,
               height: screenHeight * 0.9,
-              decoration: const BoxDecoration(
-                color: Color(0xfffafafa),
-
-              ),
+              decoration: const BoxDecoration(color: Color(0xfffafafa)),
               child: SingleChildScrollView(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 30,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       const SizedBox(height: 10),
                       const Text(
                         'เข้าสู่ระบบ',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 40),
 
@@ -100,23 +88,14 @@ class _LoginPageState extends State<LoginPage> {
                         controller: phoneController,
                         keyboardType: TextInputType.phone,
                         decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(30),
-                            borderSide: const BorderSide(
-                              color: Color(0xFFCC0033),
-                              width: 1.5,
-                            ),
+                            borderSide: const BorderSide(color: Color(0xFFCC0033), width: 1.5),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(30),
-                            borderSide: const BorderSide(
-                              color: Color(0xFFCC0033),
-                              width: 2,
-                            ),
+                            borderSide: const BorderSide(color: Color(0xFFCC0033), width: 2),
                           ),
                         ),
                       ),
@@ -135,28 +114,19 @@ class _LoginPageState extends State<LoginPage> {
                         controller: passwordController,
                         obscureText: true,
                         decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(30),
-                            borderSide: const BorderSide(
-                              color: Color(0xFFCC0033),
-                              width: 1.5,
-                            ),
+                            borderSide: const BorderSide(color: Color(0xFFCC0033), width: 1.5),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(30),
-                            borderSide: const BorderSide(
-                              color: Color(0xFFCC0033),
-                              width: 2,
-                            ),
+                            borderSide: const BorderSide(color: Color(0xFFCC0033), width: 2),
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 40),
+
                       SizedBox(
                         width: 180,
                         height: 45,
@@ -167,15 +137,10 @@ class _LoginPageState extends State<LoginPage> {
                             shape: const StadiumBorder(),
                           ),
                           child: isLoading
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white,
-                                )
+                              ? const CircularProgressIndicator(color: Colors.white)
                               : const Text(
                                   'เข้าสู่ระบบ',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                  ),
+                                  style: TextStyle(color: Colors.white, fontSize: 16),
                                 ),
                         ),
                       ),
@@ -194,18 +159,13 @@ class _LoginPageState extends State<LoginPage> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) =>
-                                      const SenderOrRiderPage(),
+                                  builder: (context) => const SenderOrRiderPage(),
                                 ),
                               );
                             },
                             child: const Text(
                               'สมัครสมาชิก',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFFCC0033),
-                              ),
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFCC0033)),
                             ),
                           ),
                         ],
@@ -222,20 +182,9 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> login() async {
-
     final url = Uri.parse("$apiEndpoint/user/login");
-
-
-    // if (url == null) {
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     const SnackBar(content: Text("API Endpoint ยังไม่ถูกโหลด")),
-    //   );
-    //   return;
-    // }
-
     final String phone = phoneController.text.trim();
     final String password = passwordController.text.trim();
-
 
     if (phone.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -252,10 +201,7 @@ class _LoginPageState extends State<LoginPage> {
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "phone": phone,
-          "password": password,
-        }),
+        body: jsonEncode({"phone": phone, "password": password}),
       );
 
       log("Response: ${response.body}");
@@ -264,15 +210,20 @@ class _LoginPageState extends State<LoginPage> {
         final data = jsonDecode(response.body);
 
         if (data['role'] == "users") {
-          log("User login success: ${data['username']}");
+          log("User login success: ${data['name']}");
+
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const SenderPage()),
+            MaterialPageRoute(
+              builder: (context) => SenderPage(
+                name: data['username'] ?? "User",
+              ),
+            ),
           );
         } else if (data['role'] == "riders") {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const RiderHomepage()),
+            MaterialPageRoute(builder: (context) => RiderHomepage()),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
