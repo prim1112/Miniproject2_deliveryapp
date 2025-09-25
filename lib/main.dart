@@ -2,8 +2,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dalivery_application/firebase_options.dart';
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import 'package:dalivery_application/pages/user/user_register.dart';
 =======
+=======
+>>>>>>> Stashed changes
 import 'package:dalivery_application/pages/homepage.dart';
 import 'package:dalivery_application/pages/rider/rider_homepage.dart';
 >>>>>>> Stashed changes
