@@ -168,7 +168,7 @@ class _SearchAddressPageState extends State<SearchAddressPage> {
                   backgroundColor: Color(0xffCC0033),
                 ),
                 child: Text(
-                  'บันทึก',
+                  'เสร็จสิ้น',
                   style: TextStyle(
                     color: Color(0xFFFAFAFA),
                     fontSize: 15,
