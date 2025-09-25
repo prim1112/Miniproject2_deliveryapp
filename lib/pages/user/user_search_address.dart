@@ -39,7 +39,18 @@ class _SearchAddressPageState extends State<SearchAddressPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Mappage')),
+      appBar: AppBar(
+        title: const Text(
+          'แผนที่ GPS  ที่อยู่',
+          style: TextStyle(
+            fontSize: 24,
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: const Color(0xffCC0033),
+        automaticallyImplyLeading: false,
+      ),
       body: SingleChildScrollView(
         child: Column(
           children: [

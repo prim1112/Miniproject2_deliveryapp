@@ -153,7 +153,7 @@ class _RiderRegisterPageState extends State<RiderRegisterPage> {
                   ),
                   IconButton(
                     icon: const Icon(
-                      Icons.add_photo_alternate_rounded,
+                      Icons.add_photo_alternate_outlined,
                       color: Colors.red,
                     ),
                     iconSize: 40,
@@ -197,7 +197,7 @@ class _RiderRegisterPageState extends State<RiderRegisterPage> {
                   ),
                   IconButton(
                     icon: const Icon(
-                      Icons.add_photo_alternate_rounded,
+                      Icons.add_photo_alternate_outlined,
                       color: Colors.red,
                     ),
                     iconSize: 40,
