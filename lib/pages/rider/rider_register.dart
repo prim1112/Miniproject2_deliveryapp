@@ -1,20 +1,8 @@
 import 'dart:convert';
 import 'dart:developer';
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 import 'package:dalivery_application/pages/rider/rider_homepage.dart';
-=======
 import 'package:dalivery_application/pages/login.dart';
->>>>>>> Stashed changes
-=======
-import 'package:dalivery_application/pages/login.dart';
->>>>>>> Stashed changes
-=======
-import 'package:dalivery_application/pages/login.dart';
->>>>>>> Stashed changes
 import 'package:http/http.dart' as http;
-
 import 'package:dalivery_application/config/config.dart';
 import 'package:dalivery_application/config/internal_config.dart';
 import 'package:dalivery_application/model/request/rider_register_post_req.dart';

@@ -1,18 +1,9 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dalivery_application/firebase_options.dart';
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 import 'package:dalivery_application/pages/user/user_register.dart';
-=======
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
 import 'package:dalivery_application/pages/homepage.dart';
 import 'package:dalivery_application/pages/rider/rider_homepage.dart';
->>>>>>> Stashed changes
 import 'package:firebase_core/firebase_core.dart';
 
 import 'package:flutter/material.dart';
@@ -34,13 +25,9 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       title: 'Flutter Demo',
       debugShowCheckedModeBanner: false,
-<<<<<<< HEAD
 
       home: Homepage(),
       
-=======
-      home: UserRegisterPage(),
->>>>>>> main
     );
   }
 }
