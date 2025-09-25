@@ -1,4 +1,5 @@
 import 'package:dalivery_application/sender/OrderSummarySenderPage.dart';
+import 'package:dalivery_application/pages/user/bottom_navbar.dart';
 import 'package:flutter/material.dart';
 
 class ProductListPage extends StatefulWidget {
@@ -10,6 +11,7 @@ class ProductListPage extends StatefulWidget {
 
 class _ProductListPageState extends State<ProductListPage> {
   final Color customRed = Color(0xFFCC0033);
+  int selectedIndex = 0; // เพิ่มตัวแปร selectedIndex
 
   @override
   Widget build(BuildContext context) {
@@ -156,6 +158,14 @@ class _ProductListPageState extends State<ProductListPage> {
             ],
           ),
         ),
+      ),
+      bottomNavigationBar: MainBottomNav(
+        selectedIndex: selectedIndex,
+        onTap: (value) {
+          setState(() {
+            selectedIndex = value;
+          });
+        },
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:dalivery_application/sender/receiver_order_status_page.dart';
+import 'package:dalivery_application/pages/user/bottom_navbar.dart'; 
 import 'package:flutter/material.dart';
 
 class SenderOrderSummaryPage extends StatefulWidget {
@@ -10,6 +11,7 @@ class SenderOrderSummaryPage extends StatefulWidget {
 
 class _SenderOrderSummaryPageState extends State<SenderOrderSummaryPage> {
   final Color customRed = const Color(0xFFCC0033);
+  int selectedIndex = 0; // ตัวแปรเก็บ index ของ bottom nav
 
   @override
   Widget build(BuildContext context) {
@@ -42,11 +44,7 @@ class _SenderOrderSummaryPageState extends State<SenderOrderSummaryPage> {
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 16),
-            Container(
-              width: 300,
-              height: 2,
-              color: Colors.black,
-            ),
+            Container(width: 300, height: 2, color: Colors.black),
             const SizedBox(height: 16),
             const Text(
               'Order : 12',
@@ -58,7 +56,6 @@ class _SenderOrderSummaryPageState extends State<SenderOrderSummaryPage> {
               style: TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 40),
-            // ถ่ายรูปประกอบสถานะ
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -81,7 +78,7 @@ class _SenderOrderSummaryPageState extends State<SenderOrderSummaryPage> {
             const SizedBox(height: 100),
             Center(
               child: ElevatedButton(
-                onPressed: _showConfirmDialog, // กดแล้วขึ้น popup
+                onPressed: _showConfirmDialog,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
@@ -102,8 +99,17 @@ class _SenderOrderSummaryPageState extends State<SenderOrderSummaryPage> {
           ],
         ),
       ),
+      bottomNavigationBar: MainBottomNav(
+        selectedIndex: selectedIndex,
+        onTap: (value) {
+          setState(() {
+            selectedIndex = value;
+          });
+        },
+      ),
     );
   }
+
   void _showConfirmDialog() {
     showDialog(
       context: context,
@@ -122,7 +128,7 @@ class _SenderOrderSummaryPageState extends State<SenderOrderSummaryPage> {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFFCC0033), // สีแดง
+                    color: Color(0xFFCC0033),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -135,7 +141,7 @@ class _SenderOrderSummaryPageState extends State<SenderOrderSummaryPage> {
                         Navigator.of(context).pop();
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.amber, // สีเหลือง
+                        backgroundColor: Colors.amber,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
@@ -150,14 +156,15 @@ class _SenderOrderSummaryPageState extends State<SenderOrderSummaryPage> {
                     ElevatedButton(
                       onPressed: () {
                         Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ReceiverOrderStatusPage(),
-                      ),
-                    );
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const ReceiverOrderStatusPage(),
+                          ),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFFCC0033), // สีแดงเข้ม
+                        backgroundColor: Color(0xFFCC0033),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),

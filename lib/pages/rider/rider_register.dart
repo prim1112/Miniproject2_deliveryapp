@@ -1,6 +1,10 @@
 import 'dart:convert';
 import 'dart:developer';
+<<<<<<< Updated upstream
 import 'package:dalivery_application/pages/rider/rider_homepage.dart';
+=======
+import 'package:dalivery_application/pages/login.dart';
+>>>>>>> Stashed changes
 import 'package:http/http.dart' as http;
 
 import 'package:dalivery_application/config/config.dart';
@@ -284,7 +288,14 @@ class _RiderRegisterPageState extends State<RiderRegisterPage> {
                 children: [
                   Text('หากมีบัญชีอยู่แล้ว', style: TextStyle(fontSize: 12)),
                   TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LoginPage(),
+                        ),
+                      );
+                    },
                     child: const Text(
                       'เข้าสู่ระบบ',
                       style: TextStyle(fontSize: 14, color: Color(0xffCC0033)),

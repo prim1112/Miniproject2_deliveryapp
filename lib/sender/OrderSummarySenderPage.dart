@@ -1,4 +1,5 @@
 import 'package:dalivery_application/sender/sender_order_summary_page.dart';
+import 'package:dalivery_application/pages/user/bottom_navbar.dart';
 import 'package:flutter/material.dart';
 
 class OrderSummarySenderPage extends StatefulWidget {
@@ -10,6 +11,7 @@ class OrderSummarySenderPage extends StatefulWidget {
 
 class _OrderSummarySenderPageState extends State<OrderSummarySenderPage> {
   final Color customRed = const Color(0xFFCC0033);
+  int selectedIndex = 0; 
 
   @override
   Widget build(BuildContext context) {
@@ -111,7 +113,6 @@ class _OrderSummarySenderPageState extends State<OrderSummarySenderPage> {
                   ],
                 ),
               ),
-
               const SizedBox(height: 32),
               Center(
                 child: ElevatedButton(
@@ -143,6 +144,14 @@ class _OrderSummarySenderPageState extends State<OrderSummarySenderPage> {
             ],
           ),
         ),
+      ),
+      bottomNavigationBar: MainBottomNav(
+        selectedIndex: selectedIndex,
+        onTap: (value) {
+          setState(() {
+            selectedIndex = value;
+          });
+        },
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:dalivery_application/sender/product_list.dart';
+import 'package:dalivery_application/pages/user/bottom_navbar.dart';
 import 'package:flutter/material.dart';
 
 class SenderPage extends StatefulWidget {
@@ -9,6 +10,8 @@ class SenderPage extends StatefulWidget {
 }
 
 class _SenderPageState extends State<SenderPage> {
+  int selectedIndex = 0; // เพิ่มตัวแปรสำหรับ bottom navigation
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -78,47 +81,44 @@ class _SenderPageState extends State<SenderPage> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
+                        children: const [
+                          Text(
                             "user1",
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(height: 6),
-                          const Text(
+                          SizedBox(height: 6),
+                          Text(
                             "0987654321",
                             style: TextStyle(fontSize: 16),
                           ),
                         ],
                       ),
                     ),
-                    Align(
-                      alignment: Alignment.bottomCenter, 
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => const ProductListPage(),
                           ),
                         );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFCC0033),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFCC0033),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
                         ),
-                        child: const Text(
-                          "รับรายการ",
-                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
                         ),
+                      ),
+                      child: const Text(
+                        "รับรายการ",
+                        style: TextStyle(color: Colors.white, fontSize: 16),
                       ),
                     ),
                   ],
@@ -127,6 +127,14 @@ class _SenderPageState extends State<SenderPage> {
             ),
           ],
         ),
+      ),
+      bottomNavigationBar: MainBottomNav(
+        selectedIndex: selectedIndex,
+        onTap: (value) {
+          setState(() {
+            selectedIndex = value;
+          });
+        },
       ),
     );
   }

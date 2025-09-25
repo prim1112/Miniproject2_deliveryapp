@@ -1,4 +1,5 @@
 import 'package:dalivery_application/sender/receiver_order_tracking_page.dart';
+import 'package:dalivery_application/pages/user/bottom_navbar.dart'; 
 import 'package:flutter/material.dart';
 
 class ReceiverOrderStatusPage extends StatefulWidget {
@@ -11,6 +12,7 @@ class ReceiverOrderStatusPage extends StatefulWidget {
 
 class _ReceiverOrderStatusPageState extends State<ReceiverOrderStatusPage> {
   final Color customRed = const Color(0xFFCC0033);
+  int selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +80,6 @@ class _ReceiverOrderStatusPageState extends State<ReceiverOrderStatusPage> {
                             style: TextStyle(fontSize: 12),
                           ),
                           const SizedBox(height: 1),
-                          // Address ครบ ไม่ถูกตัด
                           const Text(
                             "Address : Kham Riang, Kantha rawichai District, Maha Sarakham, 44150, Thailand",
                             style: TextStyle(fontSize: 12),
@@ -142,6 +143,14 @@ class _ReceiverOrderStatusPageState extends State<ReceiverOrderStatusPage> {
             ),
           ),
         ),
+      ),
+      bottomNavigationBar: MainBottomNav(
+        selectedIndex: selectedIndex,
+        onTap: (value) {
+          setState(() {
+            selectedIndex = value;
+          });
+        },
       ),
     );
   }

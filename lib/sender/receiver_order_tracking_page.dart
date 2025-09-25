@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dalivery_application/pages/user/bottom_navbar.dart'; 
 
 class ReceiverOrderTrackingPage extends StatefulWidget {
   const ReceiverOrderTrackingPage({super.key});
@@ -10,6 +11,9 @@ class ReceiverOrderTrackingPage extends StatefulWidget {
 
 class _ReceiverOrderTrackingPageState extends State<ReceiverOrderTrackingPage> {
   final Color customRed = const Color(0xFFCC0033);
+
+  // ตัวแปรสำหรับเก็บ index ของ bottom nav
+  int selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +62,15 @@ class _ReceiverOrderTrackingPageState extends State<ReceiverOrderTrackingPage> {
             ),
           ],
         ),
+      ),
+      // เพิ่ม BottomNavigationBar
+      bottomNavigationBar: MainBottomNav(
+        selectedIndex: selectedIndex,
+        onTap: (value) {
+          setState(() {
+            selectedIndex = value;
+          });
+        },
       ),
     );
   }

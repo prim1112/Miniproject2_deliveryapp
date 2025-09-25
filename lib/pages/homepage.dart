@@ -1,4 +1,5 @@
 import 'package:dalivery_application/pages/login.dart';
+import 'package:dalivery_application/pages/sender_or_receiver.dart';
 import 'package:flutter/material.dart';
 
 class Homepage extends StatefulWidget {
@@ -87,7 +88,7 @@ class _HomepageState extends State<Homepage> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const LoginPage(),
+                            builder: (context) => const SenderOrRiderPage(),
                           ),
                         );
                       },

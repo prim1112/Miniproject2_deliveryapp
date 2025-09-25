@@ -1,5 +1,13 @@
+import 'dart:convert';
+import 'dart:developer';
 import 'package:dalivery_application/pages/home_sender.dart';
+import 'package:dalivery_application/pages/rider/rider_homepage.dart';
+import 'package:dalivery_application/pages/sender_or_receiver.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:dalivery_application/config/config.dart';
+import 'package:dalivery_application/config/internal_config.dart';
+
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -9,6 +17,25 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  String? url;
+  bool isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Configuration.getConfig()
+        .then((value) {
+          url = value['apiEndpoint'];
+          log("API Endpoint: $url");
+        })
+        .catchError((err) {
+          log("Config error: ${err.toString()}");
+        });
+  }
+
   @override
   Widget build(BuildContext context) {
     double screenHeight = MediaQuery.of(context).size.height;
@@ -39,10 +66,7 @@ class _LoginPageState extends State<LoginPage> {
               height: screenHeight * 0.9,
               decoration: const BoxDecoration(
                 color: Color(0xfffafafa),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(0),
-                  topRight: Radius.circular(0),
-                ),
+
               ),
               child: SingleChildScrollView(
                 child: Padding(
@@ -62,15 +86,19 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                       const SizedBox(height: 40),
+
+                      // Phone
                       const Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'ชื่อผู้ใช้',
+                          'เบอร์โทรศัพท์',
                           style: TextStyle(fontSize: 16, color: Colors.black),
                         ),
                       ),
                       const SizedBox(height: 8),
                       TextField(
+                        controller: phoneController,
+                        keyboardType: TextInputType.phone,
                         decoration: InputDecoration(
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -93,6 +121,8 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                       const SizedBox(height: 20),
+
+                      // Password
                       const Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
@@ -102,6 +132,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 8),
                       TextField(
+                        controller: passwordController,
                         obscureText: true,
                         decoration: InputDecoration(
                           contentPadding: const EdgeInsets.symmetric(
@@ -130,24 +161,25 @@ class _LoginPageState extends State<LoginPage> {
                         width: 180,
                         height: 45,
                         child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const SenderPage(),
-                              ),
-                            );
-                          },
+                          onPressed: isLoading ? null : login,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFCC0033),
                             shape: const StadiumBorder(),
                           ),
-                          child: const Text(
-                            'เข้าสู่ระบบ',
-                            style: TextStyle(color: Colors.white, fontSize: 16),
-                          ),
+                          child: isLoading
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                )
+                              : const Text(
+                                  'เข้าสู่ระบบ',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
+                                ),
                         ),
                       ),
+
                       const SizedBox(height: 40),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -162,7 +194,8 @@ class _LoginPageState extends State<LoginPage> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const SenderPage(),
+                                  builder: (context) =>
+                                      const SenderOrRiderPage(),
                                 ),
                               );
                             },
@@ -186,5 +219,80 @@ class _LoginPageState extends State<LoginPage> {
         ],
       ),
     );
+  }
+
+  Future<void> login() async {
+
+    final url = Uri.parse("$apiEndpoint/user/login");
+
+
+    // if (url == null) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     const SnackBar(content: Text("API Endpoint ยังไม่ถูกโหลด")),
+    //   );
+    //   return;
+    // }
+
+    final String phone = phoneController.text.trim();
+    final String password = passwordController.text.trim();
+
+
+    if (phone.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("กรุณากรอกเบอร์โทรและรหัสผ่าน")),
+      );
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "phone": phone,
+          "password": password,
+        }),
+      );
+
+      log("Response: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        if (data['role'] == "users") {
+          log("User login success: ${data['username']}");
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const SenderPage()),
+          );
+        } else if (data['role'] == "riders") {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const RiderHomepage()),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("ไม่พบ role ที่ถูกต้อง")),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: ${response.statusCode}")),
+        );
+      }
+    } catch (e) {
+      log("Login error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("เกิดข้อผิดพลาดในการเชื่อมต่อ")),
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 }

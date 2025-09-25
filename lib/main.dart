@@ -1,7 +1,12 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dalivery_application/firebase_options.dart';
+<<<<<<< Updated upstream
 import 'package:dalivery_application/pages/user/user_register.dart';
+=======
+import 'package:dalivery_application/pages/homepage.dart';
+import 'package:dalivery_application/pages/rider/rider_homepage.dart';
+>>>>>>> Stashed changes
 import 'package:firebase_core/firebase_core.dart';
 
 import 'package:flutter/material.dart';
@@ -25,7 +30,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
 <<<<<<< HEAD
 
-      home: RiderHomepage(),
+      home: Homepage(),
       
 =======
       home: UserRegisterPage(),
