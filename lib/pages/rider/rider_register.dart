@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'package:dalivery_application/pages/rider/rider_homepage.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:dalivery_application/config/config.dart';
@@ -356,7 +357,7 @@ class _RiderRegisterPageState extends State<RiderRegisterPage> {
 
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => RiderRegisterPage()),
+          MaterialPageRoute(builder: (context) => RiderHomepage()),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

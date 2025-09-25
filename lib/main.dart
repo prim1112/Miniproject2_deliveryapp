@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dalivery_application/firebase_options.dart';
-import 'package:dalivery_application/pages/rider/rider_homepage.dart';
+import 'package:dalivery_application/pages/user/user_register.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       title: 'Flutter Demo',
       debugShowCheckedModeBanner: false,
-      home: RiderHomepage(),
+      home: UserRegisterPage(),
     );
   }
 }
