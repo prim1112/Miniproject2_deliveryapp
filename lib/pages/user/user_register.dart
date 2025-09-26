@@ -55,7 +55,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
         ),
         backgroundColor: const Color(0xffCC0033),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () {
             Navigator.pushReplacement(
               context,

@@ -1,3 +1,4 @@
+import 'package:dalivery_application/pages/homepage.dart';
 import 'package:dalivery_application/pages/rider/rider_register.dart';
 import 'package:dalivery_application/pages/user/user_register.dart';
 import 'package:flutter/material.dart';
@@ -17,7 +18,7 @@ class _SenderOrRiderPageState extends State<SenderOrRiderPage> {
       backgroundColor: const Color.fromARGB(255, 255, 255, 255),
       appBar: AppBar(
         title: const Text(
-          'ผู้ใช้',
+          'สมัครสมาชิก',
           style: TextStyle(
             fontSize: 24,
             color: Colors.white,
@@ -25,12 +26,12 @@ class _SenderOrRiderPageState extends State<SenderOrRiderPage> {
           ),
         ),
         backgroundColor: const Color(0xffCC0033),
-        // leading: IconButton(
-        //   icon: const Icon(Icons.arrow_back, color: Colors.white),
-        //   onPressed: () {
-        //     Get.to(() => const UserRegisterPage());
-        //   },
-        // ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          onPressed: () {
+            Get.to(() => const Homepage());
+          },
+        ),
       ),
       body: Center(
         child: Column(

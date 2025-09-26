@@ -48,7 +48,7 @@ class _RiderRegisterPageState extends State<RiderRegisterPage> {
       backgroundColor: const Color.fromARGB(255, 255, 255, 255),
       appBar: AppBar(
         title: const Text(
-          'ผู้ใช้',
+          'ไรเดอร์',
           style: TextStyle(
             fontSize: 24,
             color: Colors.white,
@@ -57,7 +57,7 @@ class _RiderRegisterPageState extends State<RiderRegisterPage> {
         ),
         backgroundColor: const Color(0xffCC0033),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () {
             Navigator.pushReplacement(
               context,
