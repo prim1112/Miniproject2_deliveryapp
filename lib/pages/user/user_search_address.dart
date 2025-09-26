@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'package:dalivery_application/config/internal_config.dart';
+import 'package:dalivery_application/pages/home_sender.dart';
+import 'package:dalivery_application/pages/login.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
@@ -244,15 +246,36 @@ class _SearchAddressPageState extends State<SearchAddressPage> {
   }
 
   void _saveAll() {
-    if (addresses.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("ยังไม่มีที่อยู่ที่เพิ่ม")));
-      return;
-    }
-    log("All addresses saved: $addresses");
+  if (addresses.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("บันทึกที่อยู่ทั้งหมดเรียบร้อยแล้ว")),
+      SnackBar(content: Text("ยังไม่มีที่อยู่ที่เพิ่ม")),
     );
+    return;
   }
+
+  log("All addresses saved: $addresses");
+
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text("บันทึกเรียบร้อย"),
+        content: Text("บันทึกที่อยู่ทั้งหมดเรียบร้อยแล้ว"),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // ปิด dialog
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginPage()), // ใส่ชื่อผู้ใช้ถ้ามี
+              );
+            },
+            child: Text("เสร็จสิ้น"),
+          ),
+        ],
+      );
+    },
+  );
+}
+
 }
