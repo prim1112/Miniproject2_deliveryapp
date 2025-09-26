@@ -364,7 +364,7 @@ class _RiderRegisterPageState extends State<RiderRegisterPage> {
 
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => RiderHomepage()),
+          MaterialPageRoute(builder: (context) => LoginPage()),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
