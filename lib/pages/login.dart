@@ -250,7 +250,7 @@ class _LoginPageState extends State<LoginPage> {
 
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const SenderPage()),
+            MaterialPageRoute(builder: (context) => const SenderPage(name: '')),
           );
         } else if (data['role'] == "riders") {
           Navigator.pushReplacement(
