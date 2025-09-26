@@ -1,4 +1,3 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dalivery_application/firebase_options.dart';
 import 'package:dalivery_application/pages/user/user_register.dart';
@@ -27,7 +26,6 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
 
       home: Homepage(),
-      
     );
   }
 }

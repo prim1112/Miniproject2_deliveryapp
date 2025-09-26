@@ -25,12 +25,14 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    Configuration.getConfig().then((value) {
-      url = value['apiEndpoint'];
-      log("API Endpoint: $url");
-    }).catchError((err) {
-      log("Config error: ${err.toString()}");
-    });
+    Configuration.getConfig()
+        .then((value) {
+          url = value['apiEndpoint'];
+          log("API Endpoint: $url");
+        })
+        .catchError((err) {
+          log("Config error: ${err.toString()}");
+        });
   }
 
   @override
@@ -64,14 +66,20 @@ class _LoginPageState extends State<LoginPage> {
               decoration: const BoxDecoration(color: Color(0xfffafafa)),
               child: SingleChildScrollView(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 30,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       const SizedBox(height: 10),
                       const Text(
                         'เข้าสู่ระบบ',
-                        style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 40),
 
@@ -88,14 +96,23 @@ class _LoginPageState extends State<LoginPage> {
                         controller: phoneController,
                         keyboardType: TextInputType.phone,
                         decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(30),
-                            borderSide: const BorderSide(color: Color(0xFFCC0033), width: 1.5),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFCC0033),
+                              width: 1.5,
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(30),
-                            borderSide: const BorderSide(color: Color(0xFFCC0033), width: 2),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFCC0033),
+                              width: 2,
+                            ),
                           ),
                         ),
                       ),
@@ -114,14 +131,23 @@ class _LoginPageState extends State<LoginPage> {
                         controller: passwordController,
                         obscureText: true,
                         decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(30),
-                            borderSide: const BorderSide(color: Color(0xFFCC0033), width: 1.5),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFCC0033),
+                              width: 1.5,
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(30),
-                            borderSide: const BorderSide(color: Color(0xFFCC0033), width: 2),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFCC0033),
+                              width: 2,
+                            ),
                           ),
                         ),
                       ),
@@ -137,10 +163,15 @@ class _LoginPageState extends State<LoginPage> {
                             shape: const StadiumBorder(),
                           ),
                           child: isLoading
-                              ? const CircularProgressIndicator(color: Colors.white)
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                )
                               : const Text(
                                   'เข้าสู่ระบบ',
-                                  style: TextStyle(color: Colors.white, fontSize: 16),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
                                 ),
                         ),
                       ),
@@ -159,13 +190,18 @@ class _LoginPageState extends State<LoginPage> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const SenderOrRiderPage(),
+                                  builder: (context) =>
+                                      const SenderOrRiderPage(),
                                 ),
                               );
                             },
                             child: const Text(
                               'สมัครสมาชิก',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFCC0033)),
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFCC0033),
+                              ),
                             ),
                           ),
                         ],
@@ -214,11 +250,7 @@ class _LoginPageState extends State<LoginPage> {
 
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(
-              builder: (context) => SenderPage(
-                name: data['username'] ?? "User",
-              ),
-            ),
+            MaterialPageRoute(builder: (context) => const SenderPage()),
           );
         } else if (data['role'] == "riders") {
           Navigator.pushReplacement(
