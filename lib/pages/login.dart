@@ -8,7 +8,6 @@ import 'package:http/http.dart' as http;
 import 'package:dalivery_application/config/config.dart';
 import 'package:dalivery_application/config/internal_config.dart';
 
-
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -64,10 +63,7 @@ class _LoginPageState extends State<LoginPage> {
             child: Container(
               width: double.infinity,
               height: screenHeight * 0.9,
-              decoration: const BoxDecoration(
-                color: Color(0xfffafafa),
-
-              ),
+              decoration: const BoxDecoration(color: Color(0xfffafafa)),
               child: SingleChildScrollView(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
@@ -155,8 +151,8 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 40),
+
                       SizedBox(
                         width: 180,
                         height: 45,
@@ -222,20 +218,9 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> login() async {
-
     final url = Uri.parse("$apiEndpoint/user/login");
-
-
-    // if (url == null) {
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     const SnackBar(content: Text("API Endpoint ยังไม่ถูกโหลด")),
-    //   );
-    //   return;
-    // }
-
     final String phone = phoneController.text.trim();
     final String password = passwordController.text.trim();
-
 
     if (phone.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -252,10 +237,7 @@ class _LoginPageState extends State<LoginPage> {
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "phone": phone,
-          "password": password,
-        }),
+        body: jsonEncode({"phone": phone, "password": password}),
       );
 
       log("Response: ${response.body}");
@@ -264,15 +246,20 @@ class _LoginPageState extends State<LoginPage> {
         final data = jsonDecode(response.body);
 
         if (data['role'] == "users") {
-          log("User login success: ${data['username']}");
+          log("User login success: ${data['name']}");
+
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const SenderPage()),
+            MaterialPageRoute(
+              builder: (context) => SenderPage(
+                // name: data['username'] ?? "User",
+              ),
+            ),
           );
         } else if (data['role'] == "riders") {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const RiderHomepage()),
+            MaterialPageRoute(builder: (context) => RiderHomepage()),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
