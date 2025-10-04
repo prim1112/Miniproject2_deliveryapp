@@ -1,6 +1,6 @@
 import 'package:dalivery_application/pages/rider/bottom_navbar.dart';
+import 'package:dalivery_application/pages/user/receiver/user_preferences.dart';
 import 'package:flutter/material.dart';
-import 'package:dalivery_application/services/user_preferences.dart';
 
 class RiderHomepage extends StatefulWidget {
   const RiderHomepage({super.key});

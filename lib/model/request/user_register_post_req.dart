@@ -13,28 +13,28 @@ String userRegisterPostRequestToJson(UserRegisterPostRequest data) =>
 class UserRegisterPostRequest {
   String name;
   String phone;
-  String password;
   String imageUser;
+  String password;
 
   UserRegisterPostRequest({
     required this.name,
     required this.phone,
-    required this.password,
     required this.imageUser,
+    required this.password,
   });
 
   factory UserRegisterPostRequest.fromJson(Map<String, dynamic> json) =>
       UserRegisterPostRequest(
         name: json["name"],
         phone: json["phone"],
-        password: json["password"],
         imageUser: json["image_user"],
+        password: json["password"],
       );
 
   Map<String, dynamic> toJson() => {
     "name": name,
     "phone": phone,
-    "password": password,
     "image_user": imageUser,
+    "password": password,
   };
 }

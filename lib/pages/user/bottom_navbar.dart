@@ -1,5 +1,6 @@
 import 'package:dalivery_application/test.dart';
 import 'package:flutter/material.dart';
+import 'package:dalivery_application/pages/homepage.dart';
 
 class MainBottomNav extends StatelessWidget {
   final int selectedIndex;
@@ -40,7 +41,7 @@ class MainBottomNav extends StatelessWidget {
           case 3:
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const testpage()),
+              MaterialPageRoute(builder: (context) => const Homepage()),
             );
             break;
         }

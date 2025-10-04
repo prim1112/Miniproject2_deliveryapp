@@ -223,9 +223,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => const LoginPage(),
-                        ),
+                        MaterialPageRoute(builder: (context) => LoginPage()),
                       );
                     },
                     child: const Text(
@@ -245,11 +243,18 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
   void register() async {
     if (name.text.trim().isEmpty ||
         phoneCtl.text.trim().isEmpty ||
-        password.text.isEmpty ||
-        image_user.text.isEmpty) {
+        password.text.isEmpty) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('กรุณากรอกข้อมูลให้ครบถ้วน')));
+      return;
+    }
+
+    // ✅ เช็กรูปภาพโดยเฉพาะ
+    if (image_user.text.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('กรุณาเลือกรูปภาพก่อนลงทะเบียน')));
       return;
     }
 
@@ -271,43 +276,42 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
     try {
       log("Sending request to $apiEndpoint/user/register-user");
 
-      var data = UserRegisterPostRequest(
-        name: name.text.trim(),
-        phone: phoneCtl.text.trim(),
-        password: password.text,
-        imageUser: image_user.text,
-      );
-
-      final response = await http.post(
+      var request = http.MultipartRequest(
+        'POST',
         Uri.parse('$apiEndpoint/user/register-user'),
-        headers: {"Content-Type": "application/json; charset=utf-8"},
-        body: userRegisterPostRequestToJson(data),
       );
 
-      log("Response: ${response.statusCode} ${response.body}");
+      request.fields['name'] = name.text.trim();
+      request.fields['phone'] = phoneCtl.text.trim();
+      request.fields['password'] = password.text;
+
+      // ✅ อัปโหลดรูปภาพ (ถ้าเลือกแล้ว)
+      if (image_user.text.isNotEmpty) {
+        request.files.add(
+          await http.MultipartFile.fromPath('image_user', image_user.text),
+        );
+      }
+
+      var response = await request.send();
+      var resBody = await response.stream.bytesToString();
+      log("Response: ${response.statusCode} $resBody");
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final Map<String, dynamic> resData = jsonDecode(response.body);
-
-        if (resData['message'] == "Phone number already exists") {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('หมายเลขโทรศัพท์นี้ถูกใช้ไปแล้ว')),
-          );
-          return;
-        }
-
-        final int userid = resData['user']['userid'];
+        final Map<String, dynamic> resData = jsonDecode(resBody);
+        final String userid = resData['users']['id'];
+        final String username = resData['users']['name'];
 
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => SearchAddressPage(userid: userid),
+            builder: (context) =>
+                SearchAddressPage(userid: userid, name: username),
           ),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('ลงทะเบียนไม่สำเร็จ: ${response.body}')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('ลงทะเบียนไม่สำเร็จ: $resBody')));
       }
     } catch (err) {
       log("Error: $err");
