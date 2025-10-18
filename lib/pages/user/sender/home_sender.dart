@@ -6,20 +6,11 @@ import 'package:dalivery_application/pages/user/sender/product_list.dart';
 import 'package:dalivery_application/pages/user/bottom_navbar.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import 'package:dalivery_application/config/shared/app_data.dart';
 
 class SenderPage extends StatefulWidget {
-  final String name;
-  final String userid;
-  final int senderid; // 🆕 userid ของผู้ส่ง
-  final int receiverid;
-
-  const SenderPage({
-    super.key,
-    required this.name,
-    required this.userid,
-    required this.senderid,
-    required this.receiverid,
-  });
+  const SenderPage({super.key});
 
   @override
   State<SenderPage> createState() => _SenderPageState();
@@ -28,71 +19,33 @@ class SenderPage extends StatefulWidget {
 class _SenderPageState extends State<SenderPage> {
   int selectedIndex = 0;
   final TextEditingController _searchController = TextEditingController();
-  String? apiEndpoint;
   List<UserSearchGetResponse> users = [];
   bool isLoading = false;
+  String url = '';
 
   @override
   void initState() {
     super.initState();
-    // โหลด config ครั้งเดียว
-    Configuration.getConfig().then((value) {
-      log("API ENDPOINT: ${value['apiEndpoint']}");
-      setState(() {
-        apiEndpoint = value['apiEndpoint'];
-      });
-      _fetchUsers(""); // โหลด users ครั้งแรก
-    });
-  }
+    Configuration.getConfig()
+        .then((value) {
+          url = value['apiEndpoint'];
+          log(value['apiEndpoint']);
 
-  void goToAddOrder(int senderid, int receiverid) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            ProductListPage(senderid: senderid, receiverid: receiverid),
-      ),
-    );
-  }
-
-  /// ฟังก์ชันเรียก API backend
-  Future<void> _fetchUsers(String query) async {
-    if (apiEndpoint == null) return; // รอ config มาก่อน
-
-    try {
-      final url = Uri.parse(
-        '$apiEndpoint/user/userPhone?userID=${widget.userid}&phone=$query',
-      );
-      log("CALL API: $url");
-
-      setState(() => isLoading = true);
-
-      final response = await http.get(url);
-
-      log("STATUS: ${response.statusCode}");
-      log("BODY: ${response.body}");
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final List<dynamic> usersJson = data["users"] ?? [];
-        setState(() {
-          users = usersJson
-              .map((u) => UserSearchGetResponse.fromJson(u))
-              .toList();
+          final appData = Provider.of<AppData>(context, listen: false);
+          final int senderId = appData.userProfile.user_id;
+          _fetchUsers("", senderId);
+        })
+        .catchError((err) {
+          log(err.toString());
         });
-      } else {
-        setState(() => users = []);
-        log("Error: ${response.statusCode}");
-      }
-    } catch (e) {
-      log("Exception: $e");
-    } finally {
-      setState(() => isLoading = false);
-    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final appData = Provider.of<AppData>(context);
+    final String userName = appData.userProfile.name;
+    final int senderId = appData.userProfile.user_id;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: PreferredSize(
@@ -102,9 +55,7 @@ class _SenderPageState extends State<SenderPage> {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-            onPressed: () {
-              Navigator.pop(context);
-            },
+            onPressed: () => Navigator.pop(context),
           ),
           title: const Text(
             'หน้าหลักคนส่ง',
@@ -119,7 +70,7 @@ class _SenderPageState extends State<SenderPage> {
               padding: const EdgeInsets.only(right: 16),
               child: Center(
                 child: Text(
-                  widget.name,
+                  userName,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -138,7 +89,7 @@ class _SenderPageState extends State<SenderPage> {
             TextField(
               controller: _searchController,
               onChanged: (value) {
-                _fetchUsers(value);
+                _fetchUsers(value, senderId);
               },
               decoration: InputDecoration(
                 hintText: "ค้นหาจากเบอร์",
@@ -173,75 +124,43 @@ class _SenderPageState extends State<SenderPage> {
                       itemBuilder: (context, index) {
                         final user = users[index];
                         return Card(
-                          color: Colors.white,
                           elevation: 3,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Container(
-                            height: 120,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 12,
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              radius: 30,
+                              backgroundImage: user.image_user != null
+                                  ? NetworkImage(user.image_user!)
+                                  : const AssetImage(
+                                          "assets/images/unnamed.webp",
+                                        )
+                                        as ImageProvider,
                             ),
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 36,
-                                  backgroundImage: user.imageUser != null
-                                      ? NetworkImage(user.imageUser!)
-                                      : const AssetImage(
-                                              "assets/images/unnamed.webp",
-                                            )
-                                            as ImageProvider,
+                            title: Text(
+                              user.name.isNotEmpty ? user.name : "ไม่ทราบชื่อ",
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: Text(user.phone),
+                            trailing: ElevatedButton(
+                              onPressed: () {
+                                goToAddOrder(user.user_id);
+                              },
+
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFCC0033),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
                                 ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        user.name.isNotEmpty
-                                            ? user.name
-                                            : "ไม่ทราบชื่อ",
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        user.phone,
-                                        style: const TextStyle(fontSize: 16),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    goToAddOrder(widget.senderid, user.userId);
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFCC0033),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(30),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 24,
-                                      vertical: 12,
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    "รับรายการ",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                              ),
+                              child: const Text(
+                                "รับรายการ",
+                                style: TextStyle(color: Colors.white),
+                              ),
                             ),
                           ),
                         );
@@ -253,12 +172,59 @@ class _SenderPageState extends State<SenderPage> {
       ),
       bottomNavigationBar: MainBottomNav(
         selectedIndex: selectedIndex,
-        onTap: (value) {
-          setState(() {
-            selectedIndex = value;
-          });
-        },
+        onTap: (value) => setState(() => selectedIndex = value),
       ),
     );
+  }
+
+  void goToAddOrder(int receiverId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProductListPage(receiverId: receiverId),
+      ),
+    );
+  }
+
+  Future<void> _fetchUsers(String query, int senderId) async {
+    if (url.isEmpty) return;
+    try {
+      final apiUrl = Uri.parse(
+        '$url/user/users/search?userID=$senderId&phone=$query',
+      );
+      log("CALL API: $apiUrl");
+
+      setState(() => isLoading = true);
+
+      final response = await http.get(apiUrl);
+
+      log("STATUS: ${response.statusCode}");
+      log("BODY: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic>? usersJson = data["users"];
+
+        if (usersJson != null && usersJson.isNotEmpty) {
+          setState(() {
+            users = usersJson
+                .where((u) => u != null) // 🔒 ป้องกัน null
+                .map(
+                  (u) =>
+                      UserSearchGetResponse.fromJson(u as Map<String, dynamic>),
+                )
+                .toList();
+          });
+        } else {
+          setState(() => users = []);
+        }
+      } else {
+        setState(() => users = []);
+      }
+    } catch (e) {
+      log("Exception: $e");
+    } finally {
+      setState(() => isLoading = false);
+    }
   }
 }

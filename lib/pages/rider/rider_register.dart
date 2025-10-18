@@ -1,11 +1,9 @@
 import 'dart:convert';
 import 'dart:developer';
-import 'package:dalivery_application/pages/rider/rider_homepage.dart';
 import 'package:dalivery_application/pages/login.dart';
 import 'package:http/http.dart' as http;
 import 'package:dalivery_application/config/config.dart';
 import 'package:dalivery_application/config/internal_config.dart';
-import 'package:dalivery_application/model/request/rider_register_post_req.dart';
 import 'package:dalivery_application/pages/sender_or_receiver.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -333,24 +331,38 @@ class _RiderRegisterPageState extends State<RiderRegisterPage> {
     }
 
     try {
-      var data = RiderRegisterPostRequest(
-        name: name.text.trim(),
-        phone: phoneCtl.text.trim(),
-        password: password.text,
-        imageRider: riderImageCtl.text,
-        imageVehicle: vehicleImageCtl.text,
-        licensePlate: licensePlateCtl.text.trim(),
-      );
-      final response = await http.post(
-        Uri.parse('$apiEndpoint/rider/register-rider'),
-        headers: {"Content-Type": "application/json; charset=utf-8"},
-        body: riderRegisterPostRequestToJson(data),
+      log("Sending request to $url/rider/register-rider");
+
+      // ✅ ใช้ MultipartRequest
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$url/rider/register-rider'),
       );
 
-      log("Response: ${response.statusCode} ${response.body}");
+      request.fields['name'] = name.text.trim();
+      request.fields['phone'] = phoneCtl.text.trim();
+      request.fields['password'] = password.text;
+      request.fields['license_plate'] = licensePlateCtl.text.trim();
+
+      // ✅ แนบไฟล์ภาพ
+      request.files.add(
+        await http.MultipartFile.fromPath('image_rider', riderImageCtl.text),
+      );
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'image_vehicle',
+          vehicleImageCtl.text,
+        ),
+      );
+
+      var response = await request.send();
+      var resBody = await response.stream.bytesToString();
+
+      log("Response: ${response.statusCode} $resBody");
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final resData = jsonDecode(response.body);
+        final Map<String, dynamic> resData = jsonDecode(resBody);
+
         if (resData['message'] == "Phone number already exists") {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('หมายเลขโทรศัพท์นี้ถูกใช้ไปแล้ว')),
@@ -358,16 +370,24 @@ class _RiderRegisterPageState extends State<RiderRegisterPage> {
           return;
         }
 
-        final int riderId = resData['rider']['rider_id'];
+        // ✅ ดึงค่าจาก key 'riders' ตาม backend
+        final int riderId = resData['riders']['rider_id'];
+        final String riderName = resData['riders']['name'];
 
-        Navigator.push(
+        log("Rider registered successfully: $riderName ($riderId)");
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('ลงทะเบียนสำเร็จ')));
+
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => LoginPage()),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('ลงทะเบียนไม่สำเร็จ: ${response.body}')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('ลงทะเบียนไม่สำเร็จ: $resBody')));
       }
     } catch (err) {
       log("Error: $err");

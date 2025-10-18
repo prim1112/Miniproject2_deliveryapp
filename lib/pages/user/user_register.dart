@@ -1,10 +1,8 @@
 import 'dart:convert';
 import 'dart:developer';
-import 'package:dalivery_application/config/internal_config.dart';
 import 'package:dalivery_application/pages/login.dart';
 import 'package:http/http.dart' as http;
 import 'package:dalivery_application/config/config.dart';
-import 'package:dalivery_application/model/request/user_register_post_req.dart';
 import 'package:dalivery_application/pages/sender_or_receiver.dart';
 import 'package:dalivery_application/pages/user/user_search_address.dart';
 import 'package:flutter/material.dart';
@@ -274,11 +272,11 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
     }
 
     try {
-      log("Sending request to $apiEndpoint/user/register-user");
+      log("Sending request to $url/user/register-user");
 
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('$apiEndpoint/user/register-user'),
+        Uri.parse('$url/user/register-user'),
       );
 
       request.fields['name'] = name.text.trim();
@@ -298,7 +296,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> resData = jsonDecode(resBody);
-        final String userid = resData['users']['id'];
+        final int userid = resData['users']['user_id'];
         final String username = resData['users']['name'];
 
         Navigator.push(

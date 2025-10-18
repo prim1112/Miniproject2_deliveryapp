@@ -1,21 +1,21 @@
 class UserSearchGetResponse {
-  int userId;
+  int user_id; // ✅ ตรงกับ backend
   String name;
   String phone;
-  String? password; // optional
-  String? imageUser; // รูปโปรไฟล์
-  String? address; // ข้อความที่อยู่
-  double? lat; // ใช้ในแอพ
-  double? long; // ใช้ในแอพ
-  String? gps; // raw gps string จาก backend
+  String? password;
+  String? image_user; // ✅ ตรงกับ backend
+  String? address_text; // ✅ ตรงกับ backend
+  double? lat;
+  double? long;
+  String? gps;
 
   UserSearchGetResponse({
-    required this.userId,
+    required this.user_id,
     required this.name,
     required this.phone,
     this.password,
-    this.imageUser,
-    this.address,
+    this.image_user,
+    this.address_text,
     this.lat,
     this.long,
     this.gps,
@@ -35,12 +35,12 @@ class UserSearchGetResponse {
     }
 
     return UserSearchGetResponse(
-      userId: json["userid"],
+      user_id: json["user_id"] ?? 0, // ✅ ชื่อเดียวกับ backend
       name: json["name"] ?? "",
       phone: json["phone"] ?? "",
       password: json["password"],
-      imageUser: json["image_user"],
-      address: json["address_text"],
+      image_user: json["image_user"],
+      address_text: json["address_text"],
       lat: parseLat,
       long: parseLong,
       gps: gpsStr,
@@ -48,12 +48,12 @@ class UserSearchGetResponse {
   }
 
   Map<String, dynamic> toJson() => {
-    "userid": userId,
+    "user_id": user_id,
     "name": name,
     "phone": phone,
     "password": password,
-    "image_user": imageUser,
-    "address_text": address,
-    "gps": gps, // ✅ ส่งกลับไปเป็น gps string
+    "image_user": image_user,
+    "address_text": address_text,
+    "gps": gps,
   };
 }
