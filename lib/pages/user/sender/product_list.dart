@@ -1,499 +1,298 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
-import 'package:dalivery_application/config/config.dart';
-import 'package:dalivery_application/model/response/user_model_get_res.dart';
-import 'package:dalivery_application/pages/user/bottom_navbar.dart';
+import 'package:dalivery_application/model/response/user_order_info_res.dart';
 import 'package:dalivery_application/pages/user/sender/sender_order_summary_page.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:dalivery_application/config/config.dart';
+import 'package:dalivery_application/config/shared/app_data.dart';
 
 class ProductListPage extends StatefulWidget {
-  final int senderid;
-  final int receiverid;
-
-  const ProductListPage({
-    super.key,
-    required this.senderid,
-    required this.receiverid,
-  });
+  final int receiverId;
+  const ProductListPage({super.key, required this.receiverId});
 
   @override
   State<ProductListPage> createState() => _ProductListPageState();
 }
 
 class _ProductListPageState extends State<ProductListPage> {
-  final ImagePicker picker = ImagePicker();
-  XFile? image; // เก็บไฟล์รูปที่ผู้ใช้เลือก
-  int selectedIndex = 0;
-
-  String apiEndpoint = "";
-  UserModel? sender;
-  UserModel? receiver;
   bool isLoading = true;
-
-  final TextEditingController detailController = TextEditingController();
-
-  int selectedSenderAddressIndex = 0;
-  int selectedReceiverAddressIndex = 0;
-
-  String? createdShipmentId; // ✅ เก็บ shipment_id หลังสร้าง shipment
-
-  List<Map<String, dynamic>> products = []; // ✅ เก็บรายการสินค้า
+  Receiver? sender;
+  Receiver? receiver;
+  List<Address> senderAddresses = [];
+  List<Address> receiverAddresses = [];
+  int selectedSenderAddress = 0;
+  int selectedReceiverAddress = 0;
+  List<Map<String, dynamic>> products = [];
+  String? createdShipmentId;
+  final ImagePicker picker = ImagePicker();
+  final TextEditingController detailCtl = TextEditingController();
+  XFile? image;
+  String url = "";
 
   @override
   void initState() {
     super.initState();
     Configuration.getConfig().then((value) {
-      log("API ENDPOINT: ${value['apiEndpoint']}");
-      setState(() {
-        apiEndpoint = value['apiEndpoint'];
-      });
-      _fetchOrderInfo();
+      url = value['apiEndpoint'];
+      loadUserData();
     });
   }
 
-  Future<void> _fetchOrderInfo() async {
-    if (apiEndpoint.isEmpty) return;
+  Future<void> loadUserData() async {
     try {
-      final url = Uri.parse(
-        "$apiEndpoint/user/orderInfo?senderId=${widget.senderid}&receiverId=${widget.receiverid}",
+      final appData = Provider.of<AppData>(context, listen: false);
+      final int senderId = appData.userProfile.user_id;
+
+      final res = await http.get(
+        Uri.parse(
+          "$url/user/orderInfo?senderId=$senderId&receiverId=${widget.receiverId}",
+        ),
       );
-      final res = await http.get(url);
 
       if (res.statusCode == 200) {
-        final data = json.decode(res.body);
+        final userOrderInfoRes = userOrderInfoResFromJson(res.body);
         setState(() {
-          sender = UserModel.fromJson(data['sender']);
-          receiver = UserModel.fromJson(data['receiver']);
+          sender = userOrderInfoRes.sender;
+          receiver = userOrderInfoRes.receiver;
+          senderAddresses = sender!.addresses;
+          receiverAddresses = receiver!.addresses;
           isLoading = false;
         });
       } else {
-        setState(() => isLoading = false);
+        log("❌ loadUserData Error: ${res.body}");
       }
-    } catch (e) {
-      log("Error _fetchOrderInfo: $e");
+    } catch (err) {
+      log("❌ loadUserData Exception: $err");
       setState(() => isLoading = false);
-    }
-  }
-
-  // ✅ ฟังก์ชันยิง POST /shipments
-  Future<void> _createShipment() async {
-    if (sender == null || receiver == null) return;
-
-    final pickupAddr = sender!.addresses[selectedSenderAddressIndex];
-    final deliveryAddr = receiver!.addresses[selectedReceiverAddressIndex];
-
-    final url = Uri.parse("$apiEndpoint/shipments/shipments");
-    final body = {
-      "sender_id": widget.senderid,
-      "receiver_id": widget.receiverid,
-      "pickup_address_id": pickupAddr.addressId,
-      "delivery_address_id": deliveryAddr.addressId,
-    };
-
-    try {
-      final res = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: json.encode(body),
-      );
-
-      if (res.statusCode == 201) {
-        final data = json.decode(res.body);
-        setState(() {
-          createdShipmentId = data['shipment']['shipment_id'];
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("สร้าง Shipment สำเร็จ: $createdShipmentId")),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("สร้าง Shipment ล้มเหลว: ${res.body}")),
-        );
-      }
-    } catch (e) {
-      log("Error _createShipment: $e");
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
+        title: const Text('เพิ่มสินค้าและยืนยันที่อยู่'),
         backgroundColor: const Color(0xffCC0033),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-        title: const Text(
-          'เพิ่มสินค้า',
-          style: TextStyle(
-            fontSize: 24,
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (sender != null) ...[
-                      Text(
-                        'Sender : ${sender!.name}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      Text('Phone : ${sender!.phone}'),
-                      if (sender!.addresses.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Text("เลือกที่อยู่ผู้ส่ง:"),
-                        SizedBox(
-                          width: double.infinity,
-                          child: DropdownButtonFormField<int>(
-                            isExpanded: true, // ✅ ป้องกัน overflow
-                            value: selectedSenderAddressIndex,
-                            items: List.generate(
-                              sender!.addresses.length,
-                              (index) => DropdownMenuItem(
-                                value: index,
-                                child: Text(
-                                  sender!.addresses[index].addressText,
-                                  overflow:
-                                      TextOverflow.ellipsis, // ✅ ตัดข้อความยาว
-                                ),
-                              ),
-                            ),
-                            onChanged: (value) {
-                              setState(() {
-                                selectedSenderAddressIndex = value ?? 0;
-                              });
-                            },
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 16),
-                    ],
-
-                    if (receiver != null) ...[
-                      Text(
-                        'Receiver : ${receiver!.name}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      Text('Phone : ${receiver!.phone}'),
-                      if (receiver!.addresses.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Text("เลือกที่อยู่ผู้รับ:"),
-                        SizedBox(
-                          width: double.infinity,
-                          child: DropdownButtonFormField<int>(
-                            isExpanded: true,
-                            value: selectedReceiverAddressIndex,
-                            items: List.generate(
-                              receiver!.addresses.length,
-                              (index) => DropdownMenuItem(
-                                value: index,
-                                child: Text(
-                                  receiver!.addresses[index].addressText,
-                                  overflow:
-                                      TextOverflow.ellipsis, // ✅ ตัดข้อความยาว
-                                ),
-                              ),
-                            ),
-                            onChanged: (value) {
-                              setState(() {
-                                selectedReceiverAddressIndex = value ?? 0;
-                              });
-                            },
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 16),
-                    ],
-
-                    // ✅ ปุ่มยืนยันที่อยู่
-                    Center(
-                      child: ElevatedButton(
-                        onPressed: createdShipmentId != null
-                            ? null
-                            : _createShipment,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 40,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                        child: const Text("ยืนยันที่อยู่"),
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // ✅ ปุ่มเพิ่มสินค้า
-                    Center(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                content: SizedBox(
-                                  width: double.maxFinite,
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Container(
-                                        width: 120,
-                                        height: 120,
-                                        decoration: BoxDecoration(
-                                          border: Border.all(
-                                            color: Colors.grey,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                        ),
-                                        child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                          child: image != null
-                                              ? Image.file(
-                                                  File(image!.path),
-                                                  fit: BoxFit.cover,
-                                                )
-                                              : Image.asset(
-                                                  'assets/images/images.png',
-                                                  fit: BoxFit.cover,
-                                                ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      ElevatedButton(
-                                        onPressed: () async {
-                                          final XFile? picked = await picker
-                                              .pickImage(
-                                                source: ImageSource.gallery,
-                                              );
-                                          if (picked != null) {
-                                            setState(() {
-                                              image = picked;
-                                            });
-                                          }
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(
-                                            0xffCC0033,
-                                          ),
-                                          foregroundColor: Colors.white,
-                                        ),
-                                        child: const Text("เพิ่มรูปภาพ"),
-                                      ),
-                                      const SizedBox(height: 16),
-                                      TextField(
-                                        controller: detailController,
-                                        decoration: const InputDecoration(
-                                          labelText: "รายละเอียด",
-                                          border: OutlineInputBorder(),
-                                        ),
-                                        maxLines: 3,
-                                      ),
-                                      const SizedBox(height: 16),
-                                      ElevatedButton(
-                                        onPressed: () async {
-                                          if (createdShipmentId == null) {
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).showSnackBar(
-                                              const SnackBar(
-                                                content: Text(
-                                                  "กรุณายืนยันที่อยู่ก่อน",
-                                                ),
-                                              ),
-                                            );
-                                            return;
-                                          }
-
-                                          final url = Uri.parse(
-                                            "$apiEndpoint/products/products",
-                                          );
-                                          var request = http.MultipartRequest(
-                                            "POST",
-                                            url,
-                                          );
-                                          request.fields['shipment_id'] =
-                                              createdShipmentId ?? "";
-                                          request.fields['details'] =
-                                              detailController.text;
-
-                                          if (image != null) {
-                                            request.files.add(
-                                              await http.MultipartFile.fromPath(
-                                                "file",
-                                                image!.path,
-                                              ),
-                                            );
-                                          }
-
-                                          final streamedRes = await request
-                                              .send();
-                                          final res = await http
-                                              .Response.fromStream(streamedRes);
-
-                                          if (res.statusCode == 201) {
-                                            final data = json.decode(res.body);
-                                            setState(() {
-                                              products.add(data['product']);
-                                            });
-                                            Navigator.pop(context);
-                                          } else {
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).showSnackBar(
-                                              SnackBar(content: Text(res.body)),
-                                            );
-                                          }
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.green,
-                                          foregroundColor: Colors.white,
-                                        ),
-                                        child: const Text("บันทึกสินค้า"),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
-                          foregroundColor: Colors.white,
-                        ),
-                        child: const Text("เพิ่มรายการ"),
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    if (products.isNotEmpty) ...[
-                      const Text(
-                        "สินค้าในรายการ:",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Column(
-                        children: products.map((p) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 55,
-                              vertical: 8,
-                            ),
-                            child: Row(
-                              children: [
-                                p['image_product'] != null
-                                    ? Image.network(
-                                        p['image_product'],
-                                        width: 80,
-                                        height: 80,
-                                        fit: BoxFit.cover,
-                                      )
-                                    : Image.asset(
-                                        'assets/images/images.png',
-                                        width: 80,
-                                        height: 80,
-                                        fit: BoxFit.cover,
-                                      ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    p['details'] ?? '',
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
-
-                    const SizedBox(height: 30),
-
-                    Center(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          if (createdShipmentId == null || products.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  "กรุณาเลือกที่อยู่และเพิ่มสินค้า",
-                                ),
-                              ),
-                            );
-                            return;
-                          }
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => SenderOrderSummaryPage(
-                                shipmentId:
-                                    createdShipmentId!, // ✅ ส่ง shipment_id
-                                sender: sender!,
-                                receiver: receiver!,
-                                products: products,
-                              ),
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
-                        ),
-                        child: const Text("ถัดไป"),
-                      ),
-                    ),
-                  ],
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (sender != null) ...[
+              const Text(
+                "ข้อมูลผู้ส่ง (ฉัน)",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              Text("ชื่อ: ${sender!.name}"),
+              Text("เบอร์โทร: ${sender!.phone}"),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<int>(
+                value: selectedSenderAddress,
+                items: List.generate(
+                  senderAddresses.length,
+                  (i) => DropdownMenuItem(
+                    value: i,
+                    child: Text(senderAddresses[i].addressText),
+                  ),
+                ),
+                onChanged: (v) =>
+                    setState(() => selectedSenderAddress = v ?? 0),
+                decoration: const InputDecoration(
+                  labelText: "เลือกที่อยู่ผู้ส่ง",
                 ),
               ),
+            ],
+            const SizedBox(height: 20),
+            if (receiver != null) ...[
+              const Text(
+                "ข้อมูลผู้รับ",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              Text("ชื่อ: ${receiver!.name}"),
+              Text("เบอร์โทร: ${receiver!.phone}"),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<int>(
+                value: selectedReceiverAddress,
+                items: List.generate(
+                  receiverAddresses.length,
+                  (i) => DropdownMenuItem(
+                    value: i,
+                    child: Text(receiverAddresses[i].addressText),
+                  ),
+                ),
+                onChanged: (v) =>
+                    setState(() => selectedReceiverAddress = v ?? 0),
+                decoration: const InputDecoration(
+                  labelText: "เลือกที่อยู่ผู้รับ",
+                ),
+              ),
+            ],
+            const SizedBox(height: 30),
+
+            // ✅ ปุ่มเพิ่มสินค้า
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: addProductDialog,
+                    icon: const Icon(Icons.add),
+                    label: const Text("เพิ่มสินค้า"),
+                  ),
+                ),
+              ],
             ),
-      bottomNavigationBar: MainBottomNav(
-        selectedIndex: selectedIndex,
-        onTap: (value) {
-          setState(() {
-            selectedIndex = value;
-          });
-        },
+            const SizedBox(height: 20),
+
+            // ✅ แสดงรายการสินค้า
+            if (products.isNotEmpty)
+              Column(
+                children: products.map((p) {
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    child: ListTile(
+                      leading: p['image'] != null
+                          ? Image.file(
+                              File(p['image']),
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
+                            )
+                          : const Icon(Icons.inventory_2, size: 40),
+                      title: Text(p['details']),
+                    ),
+                  );
+                }).toList(),
+              ),
+            const SizedBox(height: 30),
+
+            // ✅ ปุ่มถัดไป
+            Center(
+              child: FilledButton(
+                onPressed: products.isEmpty ? null : submitShipment,
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 50,
+                    vertical: 15,
+                  ),
+                ),
+                child: const Text("ถัดไป", style: TextStyle(fontSize: 18)),
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  // ✅ เพิ่มสินค้าใหม่
+  void addProductDialog() {
+    detailCtl.clear();
+    image = null;
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("เพิ่มสินค้า"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: detailCtl,
+              decoration: const InputDecoration(labelText: "รายละเอียดสินค้า"),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () async {
+                final picked = await picker.pickImage(
+                  source: ImageSource.gallery,
+                );
+                if (picked != null) setState(() => image = picked);
+              },
+              child: const Text("เลือกรูป"),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("ยกเลิก"),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (detailCtl.text.isEmpty) return;
+              setState(() {
+                products.add({"details": detailCtl.text, "image": image?.path});
+              });
+              Navigator.pop(context);
+            },
+            child: const Text("บันทึกสินค้า"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> submitShipment() async {
+    try {
+      final appData = Provider.of<AppData>(context, listen: false);
+      final int senderId = appData.userProfile.user_id;
+
+      final pickup = senderAddresses[selectedSenderAddress];
+      final delivery = receiverAddresses[selectedReceiverAddress];
+
+      final res = await http.post(
+        Uri.parse("$url/deliveryRoutes/shipment/create"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "sender_id": senderId,
+          "receiver_id": widget.receiverId,
+          "pickup_address_id": pickup.addressId,
+          "delivery_address_id": delivery.addressId,
+        }),
+      );
+
+      if (res.statusCode != 201) {
+        log("❌ Create shipment error: ${res.body}");
+        return;
+      }
+
+      final shipment = jsonDecode(res.body)['shipment'];
+      final shipmentId = shipment['shipment_id'];
+      createdShipmentId = shipmentId.toString();
+
+      appData.setCreatedShipmentId(shipmentId);
+
+      for (final p in products) {
+        var req = http.MultipartRequest(
+          "POST",
+          Uri.parse("$url/deliveryRoutes/product"),
+        );
+        req.fields['shipment_id'] = shipmentId.toString();
+        req.fields['details'] = p['details'];
+        if (p['image'] != null) {
+          req.files.add(await http.MultipartFile.fromPath("file", p['image']));
+        }
+        await req.send();
+      }
+
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const SenderOrderSummaryPage()),
+      );
+    } catch (err) {
+      log("❌ submitShipment error: $err");
+    }
   }
 }

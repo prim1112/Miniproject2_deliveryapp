@@ -39,6 +39,9 @@ class Data {
   // ✅ เพิ่ม period
   int? period;
 
+  // ✅ เพิ่ม role
+  String? role;
+
   Data({
     this.imageUser,
     this.userid,
@@ -49,6 +52,7 @@ class Data {
     required this.name,
     required this.phone,
     this.period,
+    this.role,
   });
 
   factory Data.fromJson(Map<String, dynamic> json) => Data(
@@ -57,10 +61,11 @@ class Data {
     imageRider: json["image_rider"],
     imageVehicle: json["image_vehicle"],
     licensePlate: json["license_plate"],
-    riderId: json["rider_id"],
+    riderId: json["riderId"],
     name: json["name"] ?? "",
     phone: json["phone"] ?? "",
-    period: json["period"], // ✅ map ค่า period จาก API
+    period: json["period"],
+    role: json["role"], // ✅ map ค่า role จาก API
   );
 
   Map<String, dynamic> toJson() => {
@@ -72,6 +77,7 @@ class Data {
     "rider_id": riderId,
     "name": name,
     "phone": phone,
-    "period": period, // ✅ ส่งออก JSON ด้วย
+    "period": period,
+    "role": role, // ✅ ส่งออก JSON ด้วย
   };
 }

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'package:dalivery_application/config/shared/app_data.dart';
 import 'package:dalivery_application/model/request/user_login_post_req.dart';
 import 'package:dalivery_application/model/response/user_login_get_res.dart';
 import 'package:dalivery_application/pages/user/sender/home_sender.dart';
@@ -8,6 +9,7 @@ import 'package:dalivery_application/pages/sender_or_receiver.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:dalivery_application/config/config.dart';
+import 'package:provider/provider.dart';
 
 class LoginPage extends StatefulWidget {
   LoginPage({super.key});
@@ -19,17 +21,20 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-
-  String? apiEndpoint;
+  String url = '';
   bool isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    Configuration.getConfig().then((value) {
-      log("API ENDPOINT: ${value['apiEndpoint']}");
-      apiEndpoint = value['apiEndpoint'];
-    });
+    Configuration.getConfig()
+        .then((value) {
+          url = value['apiEndpoint'];
+          log(value['apiEndpoint']);
+        })
+        .catchError((err) {
+          log(err.toString());
+        });
   }
 
   @override
@@ -214,7 +219,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> login() async {
-    final loginUrl = Uri.parse("$apiEndpoint/user/login");
+    final loginUrl = Uri.parse("$url/user/login");
     final String phone = phoneController.text.trim();
     final String password = passwordController.text.trim();
 
@@ -225,13 +230,10 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    setState(() {
-      isLoading = true;
-    });
+    setState(() => isLoading = true);
 
     try {
       final req = UsersLoginPostRequest(phone: phone, password: password);
-
       final response = await http.post(
         loginUrl,
         headers: {"Content-Type": "application/json; charset=utf-8"},
@@ -243,28 +245,26 @@ class _LoginPageState extends State<LoginPage> {
       if (response.statusCode == 200) {
         final res = userLoginGetResponseFromJson(response.body);
 
-        if (res.data.userid != null) {
-          // ✅ USER login
-          final user = res.data;
-          log("User login success: ${user.name}, userid: ${user.userid}");
+        final role = res.data.role ?? '';
+        final appData = Provider.of<AppData>(context, listen: false);
 
+        if (role == 'user') {
+          appData.setUserId(res.data.userid.toString());
+          appData.setUserProfile(res.data.userid!, res.data.name);
+
+          log("👤 User login success: ${res.data.name}");
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(
-              builder: (context) => SenderPage(
-                name: user.name,
-                userid: user.userid.toString(),
-                senderid: user.userid!,
-                // ✅ id ของ sender = ตัวเอง
-                receiverid: 0, // ✅ ตั้ง default เป็น 0
-              ),
-            ),
+            MaterialPageRoute(builder: (context) => SenderPage()),
           );
-        } else if (res.data.riderId != null) {
-          // ✅ RIDER login
-          final rider = res.data;
-          log("Rider login success: ${rider.name}, riderId: ${rider.riderId}");
+        } else if (role == 'rider') {
+          appData.setUserId(res.data.riderId.toString());
+          appData.setUserProfile(
+            res.data.riderId!,
+            res.data.name,
+          ); // ✅ ใช้ riderId แทน
 
+          log("🚴 Rider login success: ${res.data.name}");
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const RiderHomepage()),
@@ -285,9 +285,7 @@ class _LoginPageState extends State<LoginPage> {
         const SnackBar(content: Text("เกิดข้อผิดพลาดในการเชื่อมต่อ")),
       );
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      setState(() => isLoading = false);
     }
   }
 }
