@@ -5,9 +5,8 @@ class AppData with ChangeNotifier {
   UserProfile _userProfile = UserProfile();
   String userId = '';
 
-  // ✅ ตัวแปรเก็บ shipment ที่สร้างล่าสุด
-  int? _createdShipmentId; // <— เพิ่มตัวแปรนี้
-  int? get createdShipmentId => _createdShipmentId; // getter
+  int? _createdShipmentId;
+  int? get createdShipmentId => _createdShipmentId;
 
   // ✅ SET method สำหรับเปลี่ยน user profile
   void setUserProfile(int id, String name) {

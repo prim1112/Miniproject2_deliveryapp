@@ -9,7 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 class RiderHomepage extends StatefulWidget {
-  const RiderHomepage({super.key});
+  const RiderHomepage({Key? key});
 
   @override
   State<RiderHomepage> createState() => _RiderHomepageState();
@@ -20,44 +20,29 @@ class _RiderHomepageState extends State<RiderHomepage> {
   List<dynamic> shipments = [];
   bool isLoading = true;
   String url = '';
+  int? currentOrderId;
 
   @override
   void initState() {
     super.initState();
-    Configuration.getConfig().then((value) {
-      url = value['apiEndpoint'];
-      fetchShipments();
-    });
-  }
-
-  Future<void> fetchShipments() async {
-    try {
-      final res = await http.get(
-        Uri.parse('$url/deliveryRoutes/shipments/pending'),
-      );
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        setState(() {
-          shipments = data['shipments'];
-          isLoading = false;
-        });
-      } else {
-        throw Exception('โหลดข้อมูลไม่สำเร็จ');
-      }
-    } catch (e) {
-      log('❌ fetchShipments error: $e');
-      setState(() => isLoading = false);
-    }
+    _loadConfigAndFetch();
   }
 
   @override
   Widget build(BuildContext context) {
+    final appData = Provider.of<AppData>(context);
+    final String riderName = appData.userProfile.name;
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xffCC0033),
-        title: const Text(
-          'รายการงานทั้งหมด',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        automaticallyImplyLeading: false,
+        backgroundColor: const Color(0xFFCC0033),
+        title: Text(
+          'หน้าหลักคนส่ง  ($riderName)',
+          style: const TextStyle(
+            fontSize: 20,
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: isLoading
@@ -109,13 +94,12 @@ class _RiderHomepageState extends State<RiderHomepage> {
                                 Text("👤 ${s['receiver_name']}"),
                                 Text("📞 ${s['receiver_phone']}"),
                                 Text("📍 ${s['address']}"),
-
                                 const SizedBox(height: 6),
                                 Align(
                                   alignment: Alignment.bottomRight,
                                   child: ElevatedButton(
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: Color(0xfff0A9718),
+                                      backgroundColor: const Color(0xfff0A9718),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(20),
                                       ),
@@ -124,10 +108,8 @@ class _RiderHomepageState extends State<RiderHomepage> {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) => RiderDetails(
-                                            shipment:
-                                                s, // ✅ ส่งข้อมูล shipment ทั้ง object ไปหน้าใหม่
-                                          ),
+                                          builder: (context) =>
+                                              RiderDetails(shipment: s),
                                         ),
                                       );
                                     },
@@ -152,7 +134,56 @@ class _RiderHomepageState extends State<RiderHomepage> {
         onTap: (index) => setState(() => selectedIndex = index),
         screenSize: MediaQuery.of(context).size,
         onDestinationSelected: (_) {},
+        currentOrderId: currentOrderId,
       ),
     );
+  }
+
+  Future<void> _loadConfigAndFetch() async {
+    try {
+      final value = await Configuration.getConfig();
+      setState(() {
+        url = value['apiEndpoint'];
+      });
+
+      log("🌐 URL Loaded in RiderHomepage: $url");
+
+      final appData = Provider.of<AppData>(context, listen: false);
+      final int riderId = appData.userProfile.user_id;
+
+      await fetchShipments(riderId);
+    } catch (e) {
+      log('❌ loadConfig error: $e');
+      setState(() => isLoading = false);
+    }
+  }
+
+  Future<void> fetchShipments(int riderId) async {
+    if (url.isEmpty) {
+      log('⚠️ URL ยังไม่ถูกโหลดจาก config');
+      return;
+    }
+
+    try {
+      final res = await http.get(
+        Uri.parse('$url/deliveryRoutes/shipments/pending'),
+      );
+      log("📡 GET $url/deliveryRoutes/shipments/pending");
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        setState(() {
+          shipments = data['shipments'];
+          isLoading = false;
+        });
+        log("✅ โหลดข้อมูล shipment สำเร็จ (${shipments.length} งาน)");
+      } else {
+        log('⚠️ โหลดข้อมูลไม่สำเร็จ: ${res.statusCode}');
+        setState(() => isLoading = false);
+      }
+    } catch (e) {
+      log('❌ fetchShipments error: $e');
+      setState(() => isLoading = false);
+    }
   }
 }

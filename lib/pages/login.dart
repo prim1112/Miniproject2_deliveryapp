@@ -3,7 +3,7 @@ import 'dart:developer';
 import 'package:dalivery_application/config/shared/app_data.dart';
 import 'package:dalivery_application/model/request/user_login_post_req.dart';
 import 'package:dalivery_application/model/response/user_login_get_res.dart';
-import 'package:dalivery_application/pages/user/sender/home_sender.dart';
+import 'package:dalivery_application/pages/user/sender/sender_homepage.dart';
 import 'package:dalivery_application/pages/rider/rider_homepage.dart';
 import 'package:dalivery_application/pages/sender_or_receiver.dart';
 import 'package:flutter/material.dart';
@@ -158,22 +158,15 @@ class _LoginPageState extends State<LoginPage> {
                         width: 180,
                         height: 45,
                         child: ElevatedButton(
-                          onPressed: isLoading ? null : login,
+                          onPressed: login, // ✅ ไม่ต้องเช็ก isLoading แล้ว
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFCC0033),
                             shape: const StadiumBorder(),
                           ),
-                          child: isLoading
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white,
-                                )
-                              : const Text(
-                                  'เข้าสู่ระบบ',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                  ),
-                                ),
+                          child: const Text(
+                            'เข้าสู่ระบบ',
+                            style: TextStyle(color: Colors.white, fontSize: 16),
+                          ),
                         ),
                       ),
 
@@ -230,8 +223,6 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    setState(() => isLoading = true);
-
     try {
       final req = UsersLoginPostRequest(phone: phone, password: password);
       final response = await http.post(
@@ -244,27 +235,19 @@ class _LoginPageState extends State<LoginPage> {
 
       if (response.statusCode == 200) {
         final res = userLoginGetResponseFromJson(response.body);
-
         final role = res.data.role ?? '';
         final appData = Provider.of<AppData>(context, listen: false);
 
         if (role == 'user') {
           appData.setUserId(res.data.userid.toString());
           appData.setUserProfile(res.data.userid!, res.data.name);
-
-          log("👤 User login success: ${res.data.name}");
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => SenderPage()),
           );
         } else if (role == 'rider') {
           appData.setUserId(res.data.riderId.toString());
-          appData.setUserProfile(
-            res.data.riderId!,
-            res.data.name,
-          ); // ✅ ใช้ riderId แทน
-
-          log("🚴 Rider login success: ${res.data.name}");
+          appData.setUserProfile(res.data.riderId!, res.data.name);
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const RiderHomepage()),
@@ -284,8 +267,6 @@ class _LoginPageState extends State<LoginPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("เกิดข้อผิดพลาดในการเชื่อมต่อ")),
       );
-    } finally {
-      setState(() => isLoading = false);
     }
   }
 }
