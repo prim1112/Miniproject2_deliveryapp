@@ -1,10 +1,10 @@
 class UserSearchGetResponse {
-  int user_id; // ✅ ตรงกับ backend
+  int user_id;
   String name;
   String phone;
   String? password;
-  String? image_user; // ✅ ตรงกับ backend
-  String? address_text; // ✅ ตรงกับ backend
+  String? image_user;
+  String? address_text;
   double? lat;
   double? long;
   String? gps;
@@ -35,7 +35,7 @@ class UserSearchGetResponse {
     }
 
     return UserSearchGetResponse(
-      user_id: json["user_id"] ?? 0, // ✅ ชื่อเดียวกับ backend
+      user_id: json["user_id"] ?? 0,
       name: json["name"] ?? "",
       phone: json["phone"] ?? "",
       password: json["password"],

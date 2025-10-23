@@ -18,7 +18,6 @@ class UserRegisterPage extends StatefulWidget {
 class _UserRegisterPageState extends State<UserRegisterPage> {
   ImagePicker picker = ImagePicker();
   XFile? image;
-  String text = '';
   TextEditingController name = TextEditingController();
   TextEditingController phoneCtl = TextEditingController();
   TextEditingController image_user = TextEditingController();
@@ -105,6 +104,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
               ),
               TextField(
                 controller: phoneCtl,
+                keyboardType: TextInputType.phone,
                 decoration: InputDecoration(
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: 10,

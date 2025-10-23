@@ -4,6 +4,9 @@ import 'dart:convert';
 ShipmentFullDetailRes shipmentFullDetailResFromJson(String str) =>
     ShipmentFullDetailRes.fromJson(json.decode(str));
 
+String shipmentFullDetailResToJson(ShipmentFullDetailRes data) =>
+    json.encode(data.toJson());
+
 class ShipmentFullDetailRes {
   int shipmentId;
   int senderId;
@@ -17,6 +20,10 @@ class ShipmentFullDetailRes {
   List<Product> products;
   List<ShipmentPhoto> shipmentPhotos;
 
+  // ✅ เพิ่มฟิลด์สำหรับตำแหน่งไรเดอร์
+  double? riderLatitude;
+  double? riderLongitude;
+
   ShipmentFullDetailRes({
     required this.shipmentId,
     required this.senderId,
@@ -29,54 +36,92 @@ class ShipmentFullDetailRes {
     required this.deliveryAddress,
     required this.products,
     required this.shipmentPhotos,
+    this.riderLatitude,
+    this.riderLongitude,
   });
 
   factory ShipmentFullDetailRes.fromJson(Map<String, dynamic> json) =>
       ShipmentFullDetailRes(
-        shipmentId: json["shipment_id"],
-        senderId: json["sender_id"],
-        receiverId: json["receiver_id"],
-        pickupAddressId: json["pickup_address_id"],
-        deliveryAddressId: json["delivery_address_id"],
-        sender: Receiver.fromJson(json["sender"]),
-        receiver: Receiver.fromJson(json["receiver"]),
-        pickupAddress: Address.fromJson(json["pickupAddress"]),
-        deliveryAddress: Address.fromJson(json["deliveryAddress"]),
-        products: List<Product>.from(
-          (json["products"] ?? []).map((x) => Product.fromJson(x)),
-        ),
-        shipmentPhotos: List<ShipmentPhoto>.from(
-          (json["shipment_photos"] ?? []).map((x) => ShipmentPhoto.fromJson(x)),
-        ),
+        shipmentId: json["shipment_id"] ?? 0,
+        senderId: json["sender_id"] ?? 0,
+        receiverId: json["receiver_id"] ?? 0,
+        pickupAddressId: json["pickup_address_id"] ?? 0,
+        deliveryAddressId: json["delivery_address_id"] ?? 0,
+        sender: Receiver.fromJson(json["sender"] ?? {}),
+        receiver: Receiver.fromJson(json["receiver"] ?? {}),
+        pickupAddress: Address.fromJson(json["pickupAddress"] ?? {}),
+        deliveryAddress: Address.fromJson(json["deliveryAddress"] ?? {}),
+        products: (json["products"] == null)
+            ? []
+            : List<Product>.from(
+                json["products"].map((x) => Product.fromJson(x)),
+              ),
+        shipmentPhotos: (json["shipment_photos"] == null)
+            ? []
+            : List<ShipmentPhoto>.from(
+                json["shipment_photos"].map((x) => ShipmentPhoto.fromJson(x)),
+              ),
+
+        // ✅ รองรับข้อมูลตำแหน่งไรเดอร์จาก backend
+        riderLatitude: json["rider_latitude"] != null
+            ? double.tryParse(json["rider_latitude"].toString())
+            : null,
+        riderLongitude: json["rider_longitude"] != null
+            ? double.tryParse(json["rider_longitude"].toString())
+            : null,
       );
+
+  Map<String, dynamic> toJson() => {
+    "shipment_id": shipmentId,
+    "sender_id": senderId,
+    "receiver_id": receiverId,
+    "pickup_address_id": pickupAddressId,
+    "delivery_address_id": deliveryAddressId,
+    "sender": sender.toJson(),
+    "receiver": receiver.toJson(),
+    "pickupAddress": pickupAddress.toJson(),
+    "deliveryAddress": deliveryAddress.toJson(),
+    "products": List<dynamic>.from(products.map((x) => x.toJson())),
+    "shipment_photos": List<dynamic>.from(
+      shipmentPhotos.map((x) => x.toJson()),
+    ),
+
+    // ✅ เพิ่มกลับตอนส่งออก
+    "rider_latitude": riderLatitude,
+    "rider_longitude": riderLongitude,
+  };
 }
 
-// ✅ ผู้ใช้ (sender / receiver)
+// 👤 ผู้ใช้ (sender / receiver)
 class Receiver {
-  String imageUser;
-  String name;
-  String password;
-  String phone;
   int userId;
+  String name;
+  String phone;
+  String imageUser;
 
   Receiver({
-    required this.imageUser,
-    required this.name,
-    required this.password,
-    required this.phone,
     required this.userId,
+    required this.name,
+    required this.phone,
+    required this.imageUser,
   });
 
   factory Receiver.fromJson(Map<String, dynamic> json) => Receiver(
-    imageUser: json["image_user"],
-    name: json["name"],
-    password: json["password"],
-    phone: json["phone"],
-    userId: json["user_id"],
+    userId: json["user_id"] ?? 0,
+    name: json["name"] ?? "-",
+    phone: json["phone"] ?? "-",
+    imageUser: json["image_user"] ?? "",
   );
+
+  Map<String, dynamic> toJson() => {
+    "user_id": userId,
+    "name": name,
+    "phone": phone,
+    "image_user": imageUser,
+  };
 }
 
-// ✅ ที่อยู่
+// 🏠 ที่อยู่
 class Address {
   int addressId;
   String addressText;
@@ -93,15 +138,23 @@ class Address {
   });
 
   factory Address.fromJson(Map<String, dynamic> json) => Address(
-    addressId: json["address_id"],
-    addressText: json["address_text"],
-    latitude: json["latitude"].toDouble(),
-    longitude: json["longitude"].toDouble(),
-    userId: json["user_id"],
+    addressId: json["address_id"] ?? 0,
+    addressText: json["address_text"] ?? "-",
+    latitude: (json["latitude"] ?? 0).toDouble(),
+    longitude: (json["longitude"] ?? 0).toDouble(),
+    userId: json["user_id"] ?? 0,
   );
+
+  Map<String, dynamic> toJson() => {
+    "address_id": addressId,
+    "address_text": addressText,
+    "latitude": latitude,
+    "longitude": longitude,
+    "user_id": userId,
+  };
 }
 
-// ✅ สินค้า
+// 📦 สินค้า
 class Product {
   int pid;
   int shipmentId;
@@ -116,14 +169,21 @@ class Product {
   });
 
   factory Product.fromJson(Map<String, dynamic> json) => Product(
-    pid: json["pid"],
-    shipmentId: json["shipment_id"],
+    pid: json["pid"] ?? 0,
+    shipmentId: json["shipment_id"] ?? 0,
     details: json["details"] ?? "",
     imageProduct: json["image_product"] ?? "",
   );
+
+  Map<String, dynamic> toJson() => {
+    "pid": pid,
+    "shipment_id": shipmentId,
+    "details": details,
+    "image_product": imageProduct,
+  };
 }
 
-// ✅ รูปภาพการจัดส่ง
+// 📸 รูปภาพของ shipment (status 1–4)
 class ShipmentPhoto {
   int? photoId;
   int? shipmentId;
@@ -138,4 +198,11 @@ class ShipmentPhoto {
     photoUrl: json["photo_url"],
     status: json["status"],
   );
+
+  Map<String, dynamic> toJson() => {
+    "photo_id": photoId,
+    "shipment_id": shipmentId,
+    "photo_url": photoUrl,
+    "status": status,
+  };
 }

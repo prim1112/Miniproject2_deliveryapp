@@ -1,5 +1,5 @@
 import 'package:dalivery_application/pages/user/receiver/receiver_status.dart';
-import 'package:dalivery_application/pages/user/sender/home_sender.dart';
+import 'package:dalivery_application/pages/user/sender/sender_homepage.dart';
 import 'package:flutter/material.dart';
 import 'package:dalivery_application/pages/user/sender/sender_order_status_page.dart';
 import 'package:dalivery_application/pages/homepage.dart';

@@ -332,8 +332,6 @@ class _RiderRegisterPageState extends State<RiderRegisterPage> {
 
     try {
       log("Sending request to $url/rider/register-rider");
-
-      // ✅ ใช้ MultipartRequest
       var request = http.MultipartRequest(
         'POST',
         Uri.parse('$url/rider/register-rider'),
