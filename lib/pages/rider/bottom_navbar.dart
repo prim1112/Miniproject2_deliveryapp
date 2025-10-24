@@ -1,3 +1,4 @@
+import 'package:dalivery_application/pages/homepage.dart';
 import 'package:dalivery_application/pages/rider/rider_homepage.dart';
 import 'package:dalivery_application/test.dart';
 import 'package:flutter/material.dart';
@@ -36,7 +37,7 @@ class MainBottomNavRider extends StatelessWidget {
           case 2:
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const testpage()),
+              MaterialPageRoute(builder: (context) => const Homepage()),
             );
             break;
         }

@@ -1,11 +1,9 @@
 import 'dart:convert';
 import 'dart:developer';
-import 'package:dalivery_application/config/internal_config.dart';
 import 'package:dalivery_application/pages/login.dart';
 import 'package:http/http.dart' as http;
 import 'package:dalivery_application/config/config.dart';
-import 'package:dalivery_application/model/request/user_register_post_req.dart';
-import 'package:dalivery_application/pages/sender_or_receiver.dart';
+import "package:dalivery_application/pages/sender_or_receiver.dart";
 import 'package:dalivery_application/pages/user/user_search_address.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -107,6 +105,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
               ),
               TextField(
                 controller: phoneCtl,
+                keyboardType: TextInputType.phone,
                 decoration: InputDecoration(
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: 10,
@@ -223,9 +222,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => const LoginPage(),
-                        ),
+                        MaterialPageRoute(builder: (context) => LoginPage()),
                       );
                     },
                     child: const Text(
@@ -245,11 +242,18 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
   void register() async {
     if (name.text.trim().isEmpty ||
         phoneCtl.text.trim().isEmpty ||
-        password.text.isEmpty ||
-        image_user.text.isEmpty) {
+        password.text.isEmpty) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('กรุณากรอกข้อมูลให้ครบถ้วน')));
+      return;
+    }
+
+    // ✅ เช็กรูปภาพโดยเฉพาะ
+    if (image_user.text.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('กรุณาเลือกรูปภาพก่อนลงทะเบียน')));
       return;
     }
 
@@ -269,45 +273,44 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
     }
 
     try {
-      log("Sending request to $apiEndpoint/user/register-user");
+      log("Sending request to $url/user/register-user");
 
-      var data = UserRegisterPostRequest(
-        name: name.text.trim(),
-        phone: phoneCtl.text.trim(),
-        password: password.text,
-        imageUser: image_user.text,
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$url/user/register-user'),
       );
 
-      final response = await http.post(
-        Uri.parse('$apiEndpoint/user/register-user'),
-        headers: {"Content-Type": "application/json; charset=utf-8"},
-        body: userRegisterPostRequestToJson(data),
-      );
+      request.fields['name'] = name.text.trim();
+      request.fields['phone'] = phoneCtl.text.trim();
+      request.fields['password'] = password.text;
 
-      log("Response: ${response.statusCode} ${response.body}");
+      // ✅ อัปโหลดรูปภาพ (ถ้าเลือกแล้ว)
+      if (image_user.text.isNotEmpty) {
+        request.files.add(
+          await http.MultipartFile.fromPath('image_user', image_user.text),
+        );
+      }
+
+      var response = await request.send();
+      var resBody = await response.stream.bytesToString();
+      log("Response: ${response.statusCode} $resBody");
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final Map<String, dynamic> resData = jsonDecode(response.body);
-
-        if (resData['message'] == "Phone number already exists") {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('หมายเลขโทรศัพท์นี้ถูกใช้ไปแล้ว')),
-          );
-          return;
-        }
-
-        final int userid = resData['user']['userid'];
+        final Map<String, dynamic> resData = jsonDecode(resBody);
+        final String userid = resData['users']['user_id'];
+        final String username = resData['users']['name'];
 
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => SearchAddressPage(userid: userid),
+            builder: (context) =>
+                SearchAddressPage(userid: userid, name: username),
           ),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('ลงทะเบียนไม่สำเร็จ: ${response.body}')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('ลงทะเบียนไม่สำเร็จ: $resBody')));
       }
     } catch (err) {
       log("Error: $err");

@@ -1,28 +1,63 @@
-import 'package:dalivery_application/sender/receiver_order_tracking_page.dart';
-import 'package:dalivery_application/pages/user/bottom_navbar.dart'; 
+import 'package:dalivery_application/model/response/user_model_get_res.dart';
+import 'package:dalivery_application/pages/user/sender/receiver_order_tracking_page.dart';
+import 'package:dalivery_application/pages/user/bottom_navbar.dart';
 import 'package:flutter/material.dart';
 
-class ReceiverOrderStatusPage extends StatefulWidget {
-  const ReceiverOrderStatusPage({super.key});
+class RecStatusDetailsPage extends StatefulWidget {
+  final String shipmentId;
+  final UserModel sender;
+  final UserModel receiver;
+  final List<Map<String, dynamic>> products;
+  final int status; // ✅ เก็บสถานะ
+  final String? photoUrl; // ✅ เพิ่มตัวแปรเก็บรูปจากหน้า SenderOrderSummaryPage
+
+  const RecStatusDetailsPage({
+    super.key,
+    required this.shipmentId,
+    required this.sender,
+    required this.receiver,
+    required this.products,
+    required this.status,
+    this.photoUrl, // ✅ optional
+  });
 
   @override
-  State<ReceiverOrderStatusPage> createState() =>
-      _ReceiverOrderStatusPageState();
+  State<RecStatusDetailsPage> createState() => _RecStatusDetailsPageState();
 }
 
-class _ReceiverOrderStatusPageState extends State<ReceiverOrderStatusPage> {
-  final Color customRed = const Color(0xFFCC0033);
+class _RecStatusDetailsPageState extends State<RecStatusDetailsPage> {
   int selectedIndex = 0;
+
+  // ✅ ฟังก์ชันแปลงตัวเลขเป็นข้อความ
+  String getStatusText(int status) {
+    switch (status) {
+      case 1:
+        return "รอไรเดอร์มารับสินค้า";
+      case 2:
+        return "ไรเดอร์รับงาน (กำลังเดินทางมารับสินค้า)";
+      case 3:
+        return "ไรเดอร์รับสินค้าแล้วและกำลังเดินทางไปส่ง";
+      case 4:
+        return "ไรเดอร์นำส่งสินค้าแล้ว";
+      default:
+        return "ไม่ทราบสถานะ";
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: customRed,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+        automaticallyImplyLeading: false,
+        backgroundColor: const Color(0xffCC0033),
+        title: const Text(
+          'สถานะคนรับ',
+          style: TextStyle(
+            fontSize: 24,
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: Padding(
@@ -39,9 +74,12 @@ class _ReceiverOrderStatusPageState extends State<ReceiverOrderStatusPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  "Order : 12",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                Text(
+                  "Shipment ID : ${widget.shipmentId}",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Row(
@@ -49,12 +87,19 @@ class _ReceiverOrderStatusPageState extends State<ReceiverOrderStatusPage> {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(6),
-                      child: Image.asset(
-                        'assets/images/don.webp',
-                        width: 50,
-                        height: 50,
-                        fit: BoxFit.cover,
-                      ),
+                      child: widget.photoUrl != null
+                          ? Image.network(
+                              widget.photoUrl!,
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
+                            )
+                          : Image.asset(
+                              'assets/images/don.webp',
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
+                            ),
                     ),
                     const SizedBox(width: 6),
                     Expanded(
@@ -62,32 +107,32 @@ class _ReceiverOrderStatusPageState extends State<ReceiverOrderStatusPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text(
-                            "PPPP",
-                            style: TextStyle(
+                          Text(
+                            widget.sender.name,
+                            style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 13,
                             ),
                           ),
                           const SizedBox(height: 1),
-                          const Text(
-                            "Phone : 0999999999",
-                            style: TextStyle(fontSize: 12),
+                          Text(
+                            "Phone : ${widget.sender.phone}",
+                            style: const TextStyle(fontSize: 12),
                           ),
                           const SizedBox(height: 1),
-                          const Text(
-                            "Order : ชานมไข่มุก โดนัท",
-                            style: TextStyle(fontSize: 12),
+                          Text(
+                            "Order : ${widget.products.map((p) => p['details']).join(", ")}",
+                            style: const TextStyle(fontSize: 12),
                           ),
                           const SizedBox(height: 1),
-                          const Text(
-                            "Address : Kham Riang, Kantha rawichai District, Maha Sarakham, 44150, Thailand",
-                            style: TextStyle(fontSize: 12),
+                          Text(
+                            "Address : ${widget.receiver.addresses.isNotEmpty ? widget.receiver.addresses.first.addressText : "-"}",
+                            style: const TextStyle(fontSize: 12),
                           ),
                           const SizedBox(height: 2),
                           Row(
-                            children: const [
-                              Text(
+                            children: [
+                              const Text(
                                 "สถานะ : ",
                                 style: TextStyle(
                                   fontWeight: FontWeight.w500,
@@ -95,8 +140,8 @@ class _ReceiverOrderStatusPageState extends State<ReceiverOrderStatusPage> {
                                 ),
                               ),
                               Text(
-                                "กำลังจัดส่ง",
-                                style: TextStyle(
+                                getStatusText(widget.status),
+                                style: const TextStyle(
                                   color: Colors.orange,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12,

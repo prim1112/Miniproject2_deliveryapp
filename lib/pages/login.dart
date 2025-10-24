@@ -1,15 +1,22 @@
 import 'dart:convert';
 import 'dart:developer';
-import 'package:dalivery_application/pages/home_sender.dart';
+import 'package:dalivery_application/model/request/user_login_post_req.dart';
+import 'package:dalivery_application/model/response/user_login_get_res.dart';
+import 'package:dalivery_application/pages/user/sender/home_sender.dart';
 import 'package:dalivery_application/pages/rider/rider_homepage.dart';
 import 'package:dalivery_application/pages/sender_or_receiver.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:dalivery_application/config/config.dart';
-import 'package:dalivery_application/config/internal_config.dart';
+import 'package:get/get.dart';
+import 'package:dalivery_application/providers/user_provider.dart';
+
+// ✅ เพิ่ม 2 import สำหรับ Provider
+import 'package:provider/provider.dart';
+import 'package:dalivery_application/providers/user_provider.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  LoginPage({super.key});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -19,26 +26,23 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-  String? url;
+  final userController = Get.find<UserController>();
+
+  String? apiEndpoint;
   bool isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    Configuration.getConfig()
-        .then((value) {
-          url = value['apiEndpoint'];
-          log("API Endpoint: $url");
-        })
-        .catchError((err) {
-          log("Config error: ${err.toString()}");
-        });
+    Configuration.getConfig().then((value) {
+      log("API ENDPOINT: ${value['apiEndpoint']}");
+      apiEndpoint = value['apiEndpoint'];
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     double screenHeight = MediaQuery.of(context).size.height;
-
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 22, 2, 2),
       body: Column(
@@ -218,7 +222,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> login() async {
-    final url = Uri.parse("$apiEndpoint/user/login");
+    final loginUrl = Uri.parse("$apiEndpoint/user/login");
     final String phone = phoneController.text.trim();
     final String password = passwordController.text.trim();
 
@@ -234,33 +238,48 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
+      final req = UsersLoginPostRequest(phone: phone, password: password);
+
       final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"phone": phone, "password": password}),
+        loginUrl,
+        headers: {"Content-Type": "application/json; charset=utf-8"},
+        body: usersLoginPostRequestToJson(req),
       );
 
       log("Response: ${response.body}");
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final jsonRes = jsonDecode(response.body);
 
-        if (data['role'] == "users") {
-          log("User login success: ${data['name']}");
+        // ✅ ตรวจว่าเป็น user หรือ rider
+        final role = jsonRes["role"];
 
+        if (role == "user") {
+          final userid = jsonRes["id"];
+          final username = jsonRes["name"];
+          log("User login success: $username, id: $userid");
+
+          // ✅ บันทึกข้อมูลใน GetX Controller
+          await userController.saveUser(userid.toString(), username);
+
+          // ไปหน้า SenderPage
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const SenderPage(name: '')),
+            MaterialPageRoute(builder: (context) => const SenderPage()),
           );
-        } else if (data['role'] == "riders") {
+        } else if (role == "rider") {
+          final riderid = jsonRes["rider_id"];
+          final ridername = jsonRes["name"];
+          log("Rider login success: $ridername, id: $riderid");
+
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => RiderHomepage()),
+            MaterialPageRoute(builder: (context) => const RiderHomepage()),
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("ไม่พบ role ที่ถูกต้อง")),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text("ไม่พบข้อมูลผู้ใช้")));
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

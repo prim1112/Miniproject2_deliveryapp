@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
-import 'package:dalivery_application/config/internal_config.dart';
-import 'package:dalivery_application/pages/home_sender.dart';
+import 'package:dalivery_application/config/config.dart';
 import 'package:dalivery_application/pages/login.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -9,9 +8,9 @@ import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
 class SearchAddressPage extends StatefulWidget {
-  final int userid;
-
-  const SearchAddressPage({super.key, required this.userid});
+  final String userid;
+  final String name;
+  SearchAddressPage({super.key, required this.userid, required this.name});
 
   @override
   State<SearchAddressPage> createState() => _SearchAddressPageState();
@@ -20,22 +19,23 @@ class SearchAddressPage extends StatefulWidget {
 class _SearchAddressPageState extends State<SearchAddressPage> {
   final MapController mapController = MapController();
   LatLng latlong = LatLng(16.246373, 103.251827);
-  final TextEditingController _latlongController = TextEditingController();
+  final TextEditingController _latController = TextEditingController();
+  final TextEditingController _longController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   List<Map<String, String>> addresses = [];
+  String url = '';
 
   @override
   void initState() {
     super.initState();
-    _latlongController.text = '${latlong.latitude}, ${latlong.longitude}';
-    log("Received userid: ${widget.userid}");
-  }
-
-  @override
-  void dispose() {
-    _latlongController.dispose();
-    _addressController.dispose();
-    super.dispose();
+    Configuration.getConfig()
+        .then((value) {
+          url = value['apiEndpoint'];
+          log(value['apiEndpoint']);
+        })
+        .catchError((err) {
+          log(err.toString());
+        });
   }
 
   @override
@@ -67,8 +67,8 @@ class _SearchAddressPageState extends State<SearchAddressPage> {
                     log('Tapped at: ${point.latitude}, ${point.longitude}');
                     setState(() {
                       latlong = point;
-                      _latlongController.text =
-                          '${point.latitude}, ${point.longitude}';
+                      _latController.text = point.latitude.toString();
+                      _longController.text = point.longitude.toString();
                     });
                   },
                 ),
@@ -106,22 +106,21 @@ class _SearchAddressPageState extends State<SearchAddressPage> {
                   SizedBox(
                     height: 80,
                     child: TextField(
-                      controller: _latlongController,
+                      controller: _latController,
                       readOnly: true,
                       decoration: InputDecoration(
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 20,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(40),
-                          borderSide: BorderSide(color: Colors.red),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(40),
-                          borderSide: BorderSide(color: Colors.red),
-                        ),
+                        labelText: "Latitude",
+                        border: OutlineInputBorder(),
                       ),
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  TextField(
+                    controller: _longController,
+                    readOnly: true,
+                    decoration: InputDecoration(
+                      labelText: "Longitude",
+                      border: OutlineInputBorder(),
                     ),
                   ),
                   SizedBox(height: 15),
@@ -198,7 +197,8 @@ class _SearchAddressPageState extends State<SearchAddressPage> {
 
   void _addAddress() async {
     final addressText = _addressController.text.trim();
-    final gps = _latlongController.text.trim();
+    final lat = _latController.text.trim();
+    final long = _longController.text.trim();
 
     if (addressText.isEmpty) {
       ScaffoldMessenger.of(
@@ -210,12 +210,13 @@ class _SearchAddressPageState extends State<SearchAddressPage> {
     final body = {
       "userid": widget.userid.toString(),
       "address_text": addressText,
-      "gps": gps,
+      "latitude": lat,
+      "longitude": long,
     };
 
     try {
       final response = await http.post(
-        Uri.parse('$apiEndpoint/user/add-address'),
+        Uri.parse('$url/user/add-address'),
         headers: {"Content-Type": "application/json; charset=utf-8"},
         body: jsonEncode(body),
       );
@@ -223,7 +224,7 @@ class _SearchAddressPageState extends State<SearchAddressPage> {
       if (response.statusCode == 201) {
         log("Address added successfully: $addressText");
         setState(() {
-          addresses.add({"address": addressText, "gps": gps});
+          addresses.add({"address": addressText, "lat": lat, "long": long});
           _addressController.clear();
         });
         ScaffoldMessenger.of(
@@ -246,36 +247,37 @@ class _SearchAddressPageState extends State<SearchAddressPage> {
   }
 
   void _saveAll() {
-  if (addresses.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("ยังไม่มีที่อยู่ที่เพิ่ม")),
+    if (addresses.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("ยังไม่มีที่อยู่ที่เพิ่ม")));
+      return;
+    }
+
+    log("All addresses saved: $addresses");
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("บันทึกเรียบร้อย"),
+          content: Text("บันทึกที่อยู่ทั้งหมดเรียบร้อยแล้ว"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // ปิด dialog
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LoginPage(),
+                  ), // ใส่ชื่อผู้ใช้ถ้ามี
+                );
+              },
+              child: Text("เสร็จสิ้น"),
+            ),
+          ],
+        );
+      },
     );
-    return;
   }
-
-  log("All addresses saved: $addresses");
-
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text("บันทึกเรียบร้อย"),
-        content: Text("บันทึกที่อยู่ทั้งหมดเรียบร้อยแล้ว"),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(); // ปิด dialog
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginPage()), // ใส่ชื่อผู้ใช้ถ้ามี
-              );
-            },
-            child: Text("เสร็จสิ้น"),
-          ),
-        ],
-      );
-    },
-  );
-}
-
 }

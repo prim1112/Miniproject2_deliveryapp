@@ -1,31 +1,32 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dalivery_application/firebase_options.dart';
-import 'package:dalivery_application/pages/user/user_register.dart';
-import 'package:dalivery_application/pages/homepage.dart';
-import 'package:dalivery_application/pages/rider/rider_homepage.dart';
-import 'package:firebase_core/firebase_core.dart';
-
+import 'package:dalivery_application/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:dalivery_application/pages/login.dart';
+import 'package:dalivery_application/pages/homepage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  FirebaseFirestore.instance.settings = const Settings(
-    persistenceEnabled: true,
-  );
-  runApp(const MyApp());
+
+  // ✅ สร้าง UserController และโหลดข้อมูล user จาก SharedPreferences
+  final userController = Get.put(UserController());
+  await userController.loadUser();
+
+  // ✅ ตรวจสอบว่ามี userId แล้วหรือยัง
+  final bool isLoggedIn = userController.userId.value.isNotEmpty;
+
+  runApp(MyApp(isLoggedIn: isLoggedIn));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool isLoggedIn;
+  const MyApp({super.key, required this.isLoggedIn});
+
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'Flutter Demo',
+      title: 'Delivery App',
       debugShowCheckedModeBanner: false,
-
-      home: Homepage(),
+      home: isLoggedIn ? const Homepage() : LoginPage(),
     );
   }
 }
