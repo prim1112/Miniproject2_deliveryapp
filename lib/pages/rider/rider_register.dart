@@ -3,7 +3,6 @@ import 'dart:developer';
 import 'package:dalivery_application/pages/login.dart';
 import 'package:http/http.dart' as http;
 import 'package:dalivery_application/config/config.dart';
-import 'package:dalivery_application/config/internal_config.dart';
 import 'package:dalivery_application/pages/sender_or_receiver.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';

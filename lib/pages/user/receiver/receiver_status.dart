@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:dalivery_application/pages/user/bottom_navbar.dart';
-import 'package:dalivery_application/pages/user/receiver/receiver_order_tracking_page.dart'; // ✅ เพิ่ม import หน้ารายละเอียด
+import 'package:dalivery_application/pages/user/receiver/receiver_order_tracking_page.dart';
 
 class RecStatusPage extends StatefulWidget {
   const RecStatusPage({super.key});

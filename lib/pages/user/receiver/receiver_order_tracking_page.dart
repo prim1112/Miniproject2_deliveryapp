@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
-import 'package:geolocator/geolocator.dart';
 
 class ReceiverOrderTrackingPage extends StatefulWidget {
   final int orderId;

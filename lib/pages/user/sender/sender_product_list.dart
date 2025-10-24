@@ -111,9 +111,27 @@ class _ProductListPageState extends State<ProductListPage> {
                 "ข้อมูลผู้รับ",
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
+              const SizedBox(height: 8),
+
+              // ✅ แสดงรูปผู้รับ
+              Center(
+                child: CircleAvatar(
+                  radius: 40,
+                  backgroundColor: Colors.grey[200],
+                  backgroundImage: receiver!.imageUser.isNotEmpty
+                      ? NetworkImage(receiver!.imageUser)
+                      : const AssetImage("assets/images/unnamed.webp")
+                            as ImageProvider,
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // ✅ ข้อมูลผู้รับ
               Text("ชื่อ: ${receiver!.name}"),
               Text("เบอร์โทร: ${receiver!.phone}"),
               const SizedBox(height: 8),
+
+              // ✅ Dropdown เลือกที่อยู่ผู้รับ
               DropdownButtonFormField<int>(
                 value: selectedReceiverAddress,
                 items: List.generate(
@@ -127,15 +145,6 @@ class _ProductListPageState extends State<ProductListPage> {
                     ),
                   ),
                 ),
-                selectedItemBuilder: (context) {
-                  return receiverAddresses.map((address) {
-                    return Text(
-                      address.addressText,
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 2,
-                    );
-                  }).toList();
-                },
                 onChanged: (v) =>
                     setState(() => selectedReceiverAddress = v ?? 0),
                 decoration: const InputDecoration(
@@ -143,7 +152,18 @@ class _ProductListPageState extends State<ProductListPage> {
                 ),
                 isExpanded: true,
               ),
+              const SizedBox(height: 10),
+
+              // ✅ แสดงพิกัดจากที่อยู่ที่เลือกไว้
+              if (receiverAddresses.isNotEmpty)
+                Text(
+                  "📍 พิกัด: "
+                  "ละติจูด ${receiverAddresses[selectedReceiverAddress].latitude.toStringAsFixed(6)}, "
+                  "ลองจิจูด ${receiverAddresses[selectedReceiverAddress].longitude.toStringAsFixed(6)}",
+                  style: const TextStyle(fontSize: 14, color: Colors.black87),
+                ),
             ],
+
             const SizedBox(height: 20),
             Center(
               child: FilledButton.icon(

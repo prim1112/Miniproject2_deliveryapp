@@ -1,5 +1,4 @@
 import 'package:dalivery_application/pages/homepage.dart';
-import 'package:dalivery_application/pages/rider/gpsmap.dart';
 import 'package:dalivery_application/pages/rider/rider_homepage.dart';
 import 'package:flutter/material.dart';
 
@@ -49,10 +48,6 @@ class MainBottomNavRider extends StatelessWidget {
           icon: Icon(Icons.home_outlined),
           label: 'หน้าแรก',
         ),
-        // BottomNavigationBarItem(
-        //   icon: Icon(Icons.notifications_active_outlined),
-        //   label: 'สถานะ',
-        // ),
         BottomNavigationBarItem(
           icon: Icon(Icons.logout_outlined),
           label: 'ออกจากระบบ',

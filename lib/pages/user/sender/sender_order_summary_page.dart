@@ -10,6 +10,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:dalivery_application/config/shared/app_data.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 class SenderOrderSummaryPage extends StatefulWidget {
   const SenderOrderSummaryPage({super.key});
@@ -30,6 +32,8 @@ class _SenderOrderSummaryPageState extends State<SenderOrderSummaryPage> {
   List<Product> products = [];
   String? senderAddress;
   String? receiverAddress;
+  LatLng? receiverPosition;
+  final MapController mapController = MapController();
 
   @override
   void initState() {
@@ -92,6 +96,37 @@ class _SenderOrderSummaryPageState extends State<SenderOrderSummaryPage> {
                   Text('📞 เบอร์โทร: ${receiver?.phone ?? "-"}'),
                   Text('🏠 ที่อยู่ผู้รับ: ${receiverAddress ?? "-"}'),
                   const Divider(height: 30),
+                  if (receiverPosition != null)
+                    SizedBox(
+                      height: 300,
+                      child: FlutterMap(
+                        mapController: mapController,
+                        options: MapOptions(
+                          initialCenter: receiverPosition!,
+                          initialZoom: 14,
+                        ),
+                        children: [
+                          TileLayer(
+                            urlTemplate:
+                                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            userAgentPackageName: 'dalivery_application',
+                          ),
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                point: receiverPosition!,
+                                child: const Icon(
+                                  Icons.location_pin,
+                                  color: Colors.red,
+                                  size: 45,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
                   Text(
                     'ออเดอร์: ${shipmentId ?? "-"}',
                     style: const TextStyle(
