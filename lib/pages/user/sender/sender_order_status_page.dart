@@ -1,25 +1,15 @@
-import 'package:dalivery_application/model/response/user_model_get_res.dart';
-import 'package:dalivery_application/pages/user/sender/receiver_order_tracking_page.dart';
+import 'dart:convert';
+import 'dart:developer';
+import 'package:dalivery_application/config/config.dart';
+import 'package:dalivery_application/config/shared/app_data.dart';
 import 'package:dalivery_application/pages/user/bottom_navbar.dart';
+import 'package:dalivery_application/pages/user/receiver/receiver_order_tracking_page.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 
 class SenderOrderStatusPage extends StatefulWidget {
-  final String shipmentId;
-  final UserModel sender;
-  final UserModel receiver;
-  final List<Map<String, dynamic>> products;
-  final int status; // ✅ เก็บสถานะ
-  final String? photoUrl; // ✅ เพิ่มตัวแปรเก็บรูปจากหน้า SenderOrderSummaryPage
-
-  const SenderOrderStatusPage({
-    super.key,
-    required this.shipmentId,
-    required this.sender,
-    required this.receiver,
-    required this.products,
-    required this.status,
-    this.photoUrl, // ✅ optional
-  });
+  const SenderOrderStatusPage({super.key});
 
   @override
   State<SenderOrderStatusPage> createState() => _SenderOrderStatusPageState();
@@ -27,21 +17,17 @@ class SenderOrderStatusPage extends StatefulWidget {
 
 class _SenderOrderStatusPageState extends State<SenderOrderStatusPage> {
   int selectedIndex = 0;
+  List<dynamic> shipments = [];
+  String url = '';
 
-  // ✅ ฟังก์ชันแปลงตัวเลขเป็นข้อความ
-  String getStatusText(int status) {
-    switch (status) {
-      case 1:
-        return "รอไรเดอร์มารับสินค้า";
-      case 2:
-        return "ไรเดอร์รับงาน (กำลังเดินทางมารับสินค้า)";
-      case 3:
-        return "ไรเดอร์รับสินค้าแล้วและกำลังเดินทางไปส่ง";
-      case 4:
-        return "ไรเดอร์นำส่งสินค้าแล้ว";
-      default:
-        return "ไม่ทราบสถานะ";
-    }
+  @override
+  void initState() {
+    super.initState();
+    Configuration.getConfig().then((value) {
+      url = value['apiEndpoint'];
+      final appData = Provider.of<AppData>(context, listen: false);
+      fetchShipmentsBySender(appData.userProfile.user_id);
+    });
   }
 
   @override
@@ -52,156 +38,168 @@ class _SenderOrderStatusPageState extends State<SenderOrderStatusPage> {
         automaticallyImplyLeading: false,
         backgroundColor: const Color(0xffCC0033),
         title: const Text(
-          'สถานะคนส่ง',
+          'รายการส่งสินค้าของคุณ',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: 22,
             color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: ListView.builder(
-          itemCount: widget.products.length, // ✅ มี sender ตาม products
-          itemBuilder: (context, index) {
-            final product = widget.products[index];
-            return Card(
-              color: Colors.white,
-              elevation: 3,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(6.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Shipment ID : ${widget.shipmentId}",
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
+
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            ...shipments.map((shipment) {
+              return Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Column(
+                        children: [
+                          Text(
+                            "Order: ${shipment['shipment_id'] ?? '-'}",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              shipment['photo_url'] ??
+                                  "https://cdn-icons-png.flaticon.com/512/3081/3081559.png",
+                              width: 90,
+                              height: 90,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: widget.photoUrl != null
-                              ? Image.network(
-                                  widget.photoUrl!,
-                                  width: 50,
-                                  height: 50,
-                                  fit: BoxFit.cover,
-                                )
-                              : Image.asset(
-                                  'assets/images/don.webp',
-                                  width: 50,
-                                  height: 50,
-                                  fit: BoxFit.cover,
-                                ),
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 18),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // ✅ ดึง sender ของ product แต่ละตัว
                               Text(
-                                product['sender_name'] ?? widget.sender.name,
+                                "👤 ${shipment['receiver_name'] ?? '-'}",
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 13,
+                                  fontSize: 15,
                                 ),
                               ),
-                              const SizedBox(height: 1),
                               Text(
-                                "Phone : ${product['sender_phone'] ?? widget.sender.phone}",
-                                style: const TextStyle(fontSize: 12),
+                                "📞 ${shipment['receiver_phone'] ?? '-'}",
+                                style: const TextStyle(fontSize: 13),
                               ),
-                              const SizedBox(height: 1),
                               Text(
-                                "Order : ${product['details']}",
+                                "📍 ${shipment['delivery_address'] ?? '-'}",
                                 style: const TextStyle(fontSize: 12),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              const SizedBox(height: 1),
+                              const SizedBox(height: 6),
                               Text(
-                                "Address : ${widget.receiver.addresses.isNotEmpty ? widget.receiver.addresses.first.addressText : "-"}",
-                                style: const TextStyle(fontSize: 12),
+                                "สถานะ: ${getStatusText(shipment['status'])}",
+                                style: const TextStyle(
+                                  color: Colors.orange,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
                               ),
-                              const SizedBox(height: 2),
-                              Row(
-                                children: [
-                                  const Text(
-                                    "สถานะ : ",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  Text(
-                                    getStatusText(widget.status),
-                                    style: const TextStyle(
-                                      color: Colors.orange,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 6),
                               Align(
-                                alignment: Alignment.centerRight,
+                                alignment: Alignment.bottomRight,
                                 child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xff0A9718),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 6,
+                                    ),
+                                  ),
                                   onPressed: () {
+                                    final id = shipment['shipment_id'];
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) =>
-                                            const ReceiverOrderTrackingPage(),
+                                            ReceiverOrderTrackingPage(
+                                              orderId: id,
+                                            ),
                                       ),
                                     );
                                   },
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                      vertical: 4,
-                                    ),
-                                    backgroundColor: Colors.green,
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                  ),
                                   child: const Text(
                                     "รายละเอียด",
-                                    style: TextStyle(fontSize: 12),
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                    ),
                                   ),
                                 ),
                               ),
                             ],
                           ),
                         ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            }),
+          ],
         ),
       ),
+
       bottomNavigationBar: MainBottomNav(
         selectedIndex: selectedIndex,
-        onTap: (value) {
-          setState(() {
-            selectedIndex = value;
-          });
-        },
+        onTap: (value) => setState(() => selectedIndex = value),
       ),
     );
+  }
+
+  Future<void> fetchShipmentsBySender(int senderId) async {
+    try {
+      final res = await http.get(
+        Uri.parse("$url/deliveryRoutes/shipments/bySender/$senderId"),
+      );
+      if (res.statusCode == 200) {
+        final data = json.decode(res.body);
+        setState(() => shipments = data);
+      }
+    } catch (e) {
+      log("❌ fetchShipmentsBySender error: $e");
+    }
+  }
+
+  String getStatusText(dynamic status) {
+    final s = int.tryParse(status.toString()) ?? 0;
+    switch (s) {
+      case 1:
+        return "รอไรเดอร์มารับสินค้า";
+      case 2:
+        return "ไรเดอร์รับงานแล้ว";
+      case 3:
+        return "ไรเดอร์กำลังเดินทางไปส่ง";
+      case 4:
+        return "ไรเดอร์ส่งสินค้าแล้ว";
+      default:
+        return "ไม่ทราบสถานะ";
+    }
   }
 }

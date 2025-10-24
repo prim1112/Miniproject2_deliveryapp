@@ -1,32 +1,26 @@
-import 'package:dalivery_application/providers/user_provider.dart';
+import 'package:dalivery_application/pages/homepage.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:dalivery_application/pages/login.dart';
-import 'package:dalivery_application/pages/homepage.dart';
+import 'package:provider/provider.dart';
+import 'package:dalivery_application/config/shared/app_data.dart'; // <-- เพิ่มไฟล์เก็บข้อมูล user
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ✅ สร้าง UserController และโหลดข้อมูล user จาก SharedPreferences
-  final userController = Get.put(UserController());
-  await userController.loadUser();
-
-  // ✅ ตรวจสอบว่ามี userId แล้วหรือยัง
-  final bool isLoggedIn = userController.userId.value.isNotEmpty;
-
-  runApp(MyApp(isLoggedIn: isLoggedIn));
+  runApp(
+    ChangeNotifierProvider(create: (_) => AppData(), child: const MyApp()),
+  );
 }
 
 class MyApp extends StatelessWidget {
-  final bool isLoggedIn;
-  const MyApp({super.key, required this.isLoggedIn});
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'Delivery App',
+      title: 'Flutter Demo',
       debugShowCheckedModeBanner: false,
-      home: isLoggedIn ? const Homepage() : LoginPage(),
+      home: Homepage(),
     );
   }
 }

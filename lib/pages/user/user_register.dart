@@ -3,7 +3,7 @@ import 'dart:developer';
 import 'package:dalivery_application/pages/login.dart';
 import 'package:http/http.dart' as http;
 import 'package:dalivery_application/config/config.dart';
-import "package:dalivery_application/pages/sender_or_receiver.dart";
+import 'package:dalivery_application/pages/sender_or_receiver.dart';
 import 'package:dalivery_application/pages/user/user_search_address.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -18,7 +18,6 @@ class UserRegisterPage extends StatefulWidget {
 class _UserRegisterPageState extends State<UserRegisterPage> {
   ImagePicker picker = ImagePicker();
   XFile? image;
-  String text = '';
   TextEditingController name = TextEditingController();
   TextEditingController phoneCtl = TextEditingController();
   TextEditingController image_user = TextEditingController();
@@ -297,7 +296,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> resData = jsonDecode(resBody);
-        final String userid = resData['users']['user_id'];
+        final int userid = resData['users']['user_id'];
         final String username = resData['users']['name'];
 
         Navigator.push(

@@ -1,19 +1,15 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'package:dalivery_application/config/shared/app_data.dart';
 import 'package:dalivery_application/model/request/user_login_post_req.dart';
 import 'package:dalivery_application/model/response/user_login_get_res.dart';
-import 'package:dalivery_application/pages/user/sender/home_sender.dart';
+import 'package:dalivery_application/pages/user/sender/sender_homepage.dart';
 import 'package:dalivery_application/pages/rider/rider_homepage.dart';
 import 'package:dalivery_application/pages/sender_or_receiver.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:dalivery_application/config/config.dart';
-import 'package:get/get.dart';
-import 'package:dalivery_application/providers/user_provider.dart';
-
-// ✅ เพิ่ม 2 import สำหรับ Provider
 import 'package:provider/provider.dart';
-import 'package:dalivery_application/providers/user_provider.dart';
 
 class LoginPage extends StatefulWidget {
   LoginPage({super.key});
@@ -25,19 +21,20 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-
-  final userController = Get.find<UserController>();
-
-  String? apiEndpoint;
+  String url = '';
   bool isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    Configuration.getConfig().then((value) {
-      log("API ENDPOINT: ${value['apiEndpoint']}");
-      apiEndpoint = value['apiEndpoint'];
-    });
+    Configuration.getConfig()
+        .then((value) {
+          url = value['apiEndpoint'];
+          log(value['apiEndpoint']);
+        })
+        .catchError((err) {
+          log(err.toString());
+        });
   }
 
   @override
@@ -161,22 +158,15 @@ class _LoginPageState extends State<LoginPage> {
                         width: 180,
                         height: 45,
                         child: ElevatedButton(
-                          onPressed: isLoading ? null : login,
+                          onPressed: login, // ✅ ไม่ต้องเช็ก isLoading แล้ว
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFCC0033),
                             shape: const StadiumBorder(),
                           ),
-                          child: isLoading
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white,
-                                )
-                              : const Text(
-                                  'เข้าสู่ระบบ',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                  ),
-                                ),
+                          child: const Text(
+                            'เข้าสู่ระบบ',
+                            style: TextStyle(color: Colors.white, fontSize: 16),
+                          ),
                         ),
                       ),
 
@@ -222,7 +212,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> login() async {
-    final loginUrl = Uri.parse("$apiEndpoint/user/login");
+    final loginUrl = Uri.parse("$url/user/login");
     final String phone = phoneController.text.trim();
     final String password = passwordController.text.trim();
 
@@ -233,13 +223,8 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    setState(() {
-      isLoading = true;
-    });
-
     try {
       final req = UsersLoginPostRequest(phone: phone, password: password);
-
       final response = await http.post(
         loginUrl,
         headers: {"Content-Type": "application/json; charset=utf-8"},
@@ -249,37 +234,28 @@ class _LoginPageState extends State<LoginPage> {
       log("Response: ${response.body}");
 
       if (response.statusCode == 200) {
-        final jsonRes = jsonDecode(response.body);
+        final res = userLoginGetResponseFromJson(response.body);
+        final role = res.data.role ?? '';
+        final appData = Provider.of<AppData>(context, listen: false);
 
-        // ✅ ตรวจว่าเป็น user หรือ rider
-        final role = jsonRes["role"];
-
-        if (role == "user") {
-          final userid = jsonRes["id"];
-          final username = jsonRes["name"];
-          log("User login success: $username, id: $userid");
-
-          // ✅ บันทึกข้อมูลใน GetX Controller
-          await userController.saveUser(userid.toString(), username);
-
-          // ไปหน้า SenderPage
+        if (role == 'user') {
+          appData.setUserId(res.data.userid.toString());
+          appData.setUserProfile(res.data.userid!, res.data.name);
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const SenderPage()),
+            MaterialPageRoute(builder: (context) => SenderPage()),
           );
-        } else if (role == "rider") {
-          final riderid = jsonRes["rider_id"];
-          final ridername = jsonRes["name"];
-          log("Rider login success: $ridername, id: $riderid");
-
+        } else if (role == 'rider') {
+          appData.setUserId(res.data.riderId.toString());
+          appData.setUserProfile(res.data.riderId!, res.data.name);
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const RiderHomepage()),
           );
         } else {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text("ไม่พบข้อมูลผู้ใช้")));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("ไม่พบ role ที่ถูกต้อง")),
+          );
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -291,10 +267,6 @@ class _LoginPageState extends State<LoginPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("เกิดข้อผิดพลาดในการเชื่อมต่อ")),
       );
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
     }
   }
 }

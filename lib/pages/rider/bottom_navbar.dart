@@ -1,11 +1,11 @@
 import 'package:dalivery_application/pages/homepage.dart';
 import 'package:dalivery_application/pages/rider/rider_homepage.dart';
-import 'package:dalivery_application/test.dart';
 import 'package:flutter/material.dart';
 
 class MainBottomNavRider extends StatelessWidget {
   final int selectedIndex;
   final Function(int) onTap;
+  final int? currentOrderId; // ✅ เพิ่มตัวแปรเก็บ order id
 
   const MainBottomNavRider({
     super.key,
@@ -13,6 +13,7 @@ class MainBottomNavRider extends StatelessWidget {
     required this.onTap,
     required Size screenSize,
     required Null Function(int index) onDestinationSelected,
+    this.currentOrderId,
   });
 
   @override
@@ -25,19 +26,15 @@ class MainBottomNavRider extends StatelessWidget {
           case 0:
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const RiderHomepage()),
+              MaterialPageRoute(builder: (context) => RiderHomepage()),
             );
             break;
+
           case 1:
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const testpage()),
-            );
-            break;
-          case 2:
-            Navigator.push(
+            Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (context) => const Homepage()),
+              (route) => false,
             );
             break;
         }
@@ -50,10 +47,6 @@ class MainBottomNavRider extends StatelessWidget {
         BottomNavigationBarItem(
           icon: Icon(Icons.home_outlined),
           label: 'หน้าแรก',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.notifications_active_outlined),
-          label: 'สถานะ',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.logout_outlined),

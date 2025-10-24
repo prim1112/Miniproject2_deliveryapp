@@ -1,48 +1,51 @@
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
-import 'package:dalivery_application/pages/user/sender/sender_order_status_page.dart';
-import 'package:dalivery_application/pages/user/bottom_navbar.dart';
-import 'package:flutter/material.dart';
+import 'package:dalivery_application/config/config.dart';
+import 'package:dalivery_application/model/response/shipment_detail_res.dart';
 import 'package:dalivery_application/model/response/user_model_get_res.dart';
+import 'package:dalivery_application/pages/user/sender/sender_order_status_page.dart';
+import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:dalivery_application/config/config.dart';
+import 'package:provider/provider.dart';
+import 'package:dalivery_application/config/shared/app_data.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 class SenderOrderSummaryPage extends StatefulWidget {
-  final String shipmentId;
-  final UserModel sender;
-  final UserModel receiver;
-  final List<Map<String, dynamic>> products;
-
-  const SenderOrderSummaryPage({
-    super.key,
-    required this.shipmentId,
-    required this.sender,
-    required this.receiver,
-    required this.products,
-  });
+  const SenderOrderSummaryPage({super.key});
 
   @override
   State<SenderOrderSummaryPage> createState() => _SenderOrderSummaryPageState();
 }
 
 class _SenderOrderSummaryPageState extends State<SenderOrderSummaryPage> {
-  int selectedIndex = 0;
   final ImagePicker picker = ImagePicker();
   XFile? image;
-  String? uploadedPhotoUrl; // ✅ เก็บ URL รูปที่อัพโหลดแล้ว
+  String? uploadedPhotoUrl;
+  String url = "";
+  int? shipmentId;
 
-  String apiEndpoint = ""; // ✅ เพิ่มตัวแปรเก็บ endpoint
+  UserModel? sender;
+  UserModel? receiver;
+  List<Product> products = [];
+  String? senderAddress;
+  String? receiverAddress;
+  LatLng? receiverPosition;
+  final MapController mapController = MapController();
 
   @override
   void initState() {
     super.initState();
-    Configuration.getConfig().then((value) {
-      log("API ENDPOINT: ${value['apiEndpoint']}");
-      setState(() {
-        apiEndpoint = value['apiEndpoint'];
-      });
+    Configuration.getConfig().then((value) async {
+      url = value['apiEndpoint'];
+      final appData = Provider.of<AppData>(context, listen: false);
+      shipmentId = appData.createdShipmentId;
+      if (shipmentId != null) {
+        await loadShipmentDetail();
+      }
+      setState(() {});
     });
   }
 
@@ -54,325 +57,247 @@ class _SenderOrderSummaryPageState extends State<SenderOrderSummaryPage> {
         automaticallyImplyLeading: false,
         backgroundColor: const Color(0xffCC0033),
         title: const Text(
-          'ผู้ส่งถ่ายรูปประกอบสถานะ',
+          'รายละเอียดการจัดส่ง',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: 20,
             color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ✅ ข้อมูลผู้ส่ง
-            Text(
-              'Sender : ${widget.sender.name}',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              'Phone : ${widget.sender.phone}',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              'Address : ${widget.sender.addresses.isNotEmpty ? widget.sender.addresses.first.addressText : "-"}',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
 
-            const SizedBox(height: 16),
-            Container(width: 300, height: 2, color: Colors.black),
-            const SizedBox(height: 16),
-
-            // ✅ ข้อมูลผู้รับ
-            Text(
-              'Receiver : ${widget.receiver.name}',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              'Phone : ${widget.receiver.phone}',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              'Address : ${widget.receiver.addresses.isNotEmpty ? widget.receiver.addresses.first.addressText : "-"}',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-
-            const SizedBox(height: 16),
-            Container(width: 300, height: 2, color: Colors.black),
-            const SizedBox(height: 16),
-
-            // ✅ รายการสินค้า
-            Text(
-              'Order : ${widget.products.length}',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: widget.products.map((p) {
-                return Text(
-                  p['details'] ?? '',
-                  style: const TextStyle(fontSize: 16),
-                );
-              }).toList(),
-            ),
-
-            const SizedBox(height: 40),
-
-            // ✅ ถ่ายรูปประกอบสถานะ
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'ถ่ายรูปประกอบสถานะ',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                const SizedBox(height: 8),
-                GestureDetector(
-                  onTap: () async {
-                    image = await picker.pickImage(source: ImageSource.camera);
-                    if (image != null) {
-                      log("📸 Image captured: ${image!.path}");
-                      setState(() {});
-                    } else {
-                      log('No Image');
-                    }
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(28),
+      body: shipmentId == null
+          ? const Center(child: Text("❌ ไม่พบข้อมูลการจัดส่ง"))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 🧍‍♂️ ข้อมูลผู้ส่ง
+                  Text(
+                    '👤 ผู้ส่ง: ${sender?.name ?? "-"}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
                     ),
-                    child: uploadedPhotoUrl != null
-                        // ✅ แสดงรูปจาก Cloudinary ถ้าอัปโหลดสำเร็จ
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(28),
-                            child: Image.network(
-                              uploadedPhotoUrl!,
-                              fit: BoxFit.cover,
-                            ),
-                          )
-                        : image != null
-                        // ✅ แสดงรูปที่เพิ่งถ่ายมา ถ้ายังไม่อัปโหลด
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(28),
-                            child: Image.file(
-                              File(image!.path),
-                              fit: BoxFit.cover,
-                            ),
-                          )
-                        // ✅ ยังไม่ถ่ายรูป → แสดงปุ่ม Add
-                        : const Center(child: Icon(Icons.add, size: 50)),
                   ),
-                ),
+                  Text('📞 เบอร์โทร: ${sender?.phone ?? "-"}'),
+                  Text('📍 ที่อยู่ผู้ส่ง: ${senderAddress ?? "-"}'),
+                  const SizedBox(height: 15),
 
-                // ✅ ปุ่มยืนยันรูปภาพ (อัปโหลดไป Firebase)
-                if (image != null && uploadedPhotoUrl == null) ...[
+                  // 📦 ข้อมูลผู้รับ
+                  Text(
+                    '📦 ผู้รับ: ${receiver?.name ?? "-"}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  Text('📞 เบอร์โทร: ${receiver?.phone ?? "-"}'),
+                  Text('🏠 ที่อยู่ผู้รับ: ${receiverAddress ?? "-"}'),
+                  const Divider(height: 30),
+                  if (receiverPosition != null)
+                    SizedBox(
+                      height: 300,
+                      child: FlutterMap(
+                        mapController: mapController,
+                        options: MapOptions(
+                          initialCenter: receiverPosition!,
+                          initialZoom: 14,
+                        ),
+                        children: [
+                          TileLayer(
+                            urlTemplate:
+                                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            userAgentPackageName: 'dalivery_application',
+                          ),
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                point: receiverPosition!,
+                                child: const Icon(
+                                  Icons.location_pin,
+                                  color: Colors.red,
+                                  size: 45,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  Text(
+                    'ออเดอร์: ${shipmentId ?? "-"}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+                  ...products.map(
+                    (p) => Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: ListTile(
+                        leading:
+                            p.imageProduct != null && p.imageProduct!.isNotEmpty
+                            ? Image.network(
+                                p.imageProduct!,
+                                width: 60,
+                                height: 60,
+                                fit: BoxFit.cover,
+                              )
+                            : const Icon(Icons.inventory_2, size: 40),
+                        title: Text(p.details),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 30),
+
+                  // ถ่ายรูปสถานะ
+                  const Text(
+                    'ถ่ายรูปประกอบสถานะ',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () async {
+                      image = await picker.pickImage(
+                        source: ImageSource.camera,
+                      );
+                      setState(() {});
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      height: 180,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: image != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: Image.file(
+                                File(image!.path),
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : uploadedPhotoUrl != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: Image.network(
+                                uploadedPhotoUrl!,
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : const Center(
+                              child: Icon(
+                                Icons.camera_alt,
+                                size: 40,
+                                color: Colors.black54,
+                              ),
+                            ),
+                    ),
+                  ),
                   const SizedBox(height: 20),
+
                   Center(
                     child: ElevatedButton(
-                      onPressed: () async {
-                        var request = http.MultipartRequest(
-                          "POST",
-                          Uri.parse(
-                            "$apiEndpoint/shipment_photos/ShipmentPhoto",
-                          ),
-                        );
-                        request.fields['shipment_id'] = widget.shipmentId;
-                        request.fields['status'] = "1";
-                        request.files.add(
-                          await http.MultipartFile.fromPath(
-                            "file",
-                            image!.path,
-                          ),
-                        );
-
-                        try {
-                          final streamedRes = await request.send();
-                          final res = await http.Response.fromStream(
-                            streamedRes,
-                          );
-                          if (res.statusCode == 201) {
-                            final data = json.decode(res.body);
-                            setState(() {
-                              uploadedPhotoUrl = data['photo']['photo_url'];
-                            });
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("อัปโหลดรูปสถานะสำเร็จ"),
-                              ),
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text("ผิดพลาด: ${res.body}")),
-                            );
-                          }
-                        } catch (e) {
-                          log("❌ Error upload photo: $e");
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
+                      onPressed: sendShipment,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.green,
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 40,
+                          horizontal: 50,
                           vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
                         ),
                       ),
                       child: const Text(
-                        "ยืนยันรูปภาพ",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                        "ส่ง",
+                        style: TextStyle(color: Colors.white),
                       ),
                     ),
                   ),
                 ],
-              ],
-            ),
-
-            const SizedBox(height: 100),
-
-            // ✅ ปุ่มส่ง
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  if (uploadedPhotoUrl == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("กรุณาถ่ายรูปและยืนยันก่อนส่ง"),
-                      ),
-                    );
-                    return;
-                  }
-                  _showConfirmDialog();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 50,
-                    vertical: 14,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(40),
-                  ),
-                ),
-                child: const Text(
-                  'ส่ง',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
               ),
             ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: MainBottomNav(
-        selectedIndex: selectedIndex,
-        onTap: (value) {
-          setState(() {
-            selectedIndex = value;
-          });
-        },
-      ),
     );
   }
 
-  void _showConfirmDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'ยืนยันการส่งสินค้า',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFFCC0033),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 30),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.amber,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 10,
-                        ),
-                      ),
-                      child: const Text(
-                        'ย้อนกลับ',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => SenderOrderStatusPage(
-                              shipmentId: widget.shipmentId,
-                              sender: widget.sender,
-                              receiver: widget.receiver,
-                              products: widget.products,
-                              status: 1,
-                              photoUrl: uploadedPhotoUrl,
-                            ),
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFCC0033),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 10,
-                        ),
-                      ),
-                      child: const Text(
-                        'ยืนยัน',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+  // ✅ โหลดข้อมูล Shipment
+  Future<void> loadShipmentDetail() async {
+    final res = await http.get(
+      Uri.parse("$url/deliveryRoutes/shipment/$shipmentId"),
+    );
+    if (res.statusCode != 200) throw Exception("โหลดไม่สำเร็จ");
+
+    final shipment = shipmentFullDetailResFromJson(res.body);
+
+    senderAddress = shipment.pickupAddress.addressText;
+    receiverAddress = shipment.deliveryAddress.addressText;
+    uploadedPhotoUrl = shipment.shipmentPhotos.isNotEmpty
+        ? shipment.shipmentPhotos.last.photoUrl
+        : null;
+
+    sender = UserModel(
+      userid: shipment.sender.userId,
+      name: shipment.sender.name,
+      phone: shipment.sender.phone,
+      imageUser: shipment.sender.imageUser,
+    );
+
+    receiver = UserModel(
+      userid: shipment.receiver.userId,
+      name: shipment.receiver.name,
+      phone: shipment.receiver.phone,
+      imageUser: shipment.receiver.imageUser,
+    );
+
+    products = shipment.products;
+  }
+
+  // ✅ ฟังก์ชันส่งสินค้า
+  Future<void> sendShipment() async {
+    if (shipmentId == null || image == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("❌ กรุณาถ่ายรูปก่อนส่ง")));
+      return;
+    }
+
+    try {
+      var req = http.MultipartRequest(
+        "POST",
+        Uri.parse("$url/deliveryRoutes/photo"),
+      );
+      req.fields['shipment_id'] = shipmentId.toString();
+      req.fields['status'] = "1"; // รอไรเดอร์มารับสินค้า
+      req.files.add(await http.MultipartFile.fromPath("file", image!.path));
+
+      final uploadResponse = await req.send();
+      final uploadFull = await http.Response.fromStream(uploadResponse);
+
+      if (uploadFull.statusCode == 201) {
+        log("✅ อัปโหลดรูปภาพสำเร็จ");
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("✅ ส่งข้อมูลสำเร็จ")));
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const SenderOrderStatusPage(),
           ),
         );
-      },
-    );
+      } else {
+        throw Exception("อัปโหลดไม่สำเร็จ: ${uploadFull.body}");
+      }
+    } catch (e) {
+      log("❌ sendShipment error: $e");
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("❌ ส่งข้อมูลไม่สำเร็จ: $e")));
+    }
   }
 }

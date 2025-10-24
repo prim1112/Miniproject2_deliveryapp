@@ -1,5 +1,7 @@
-import 'package:dalivery_application/test.dart';
+import 'package:dalivery_application/pages/user/receiver/receiver_status.dart';
+import 'package:dalivery_application/pages/user/sender/sender_homepage.dart';
 import 'package:flutter/material.dart';
+import 'package:dalivery_application/pages/user/sender/sender_order_status_page.dart';
 import 'package:dalivery_application/pages/homepage.dart';
 
 class MainBottomNav extends StatelessWidget {
@@ -17,29 +19,31 @@ class MainBottomNav extends StatelessWidget {
     return BottomNavigationBar(
       currentIndex: selectedIndex,
       onTap: (index) async {
-        onTap(index); // อัปเดต selectedIndex
+        onTap(index); // ✅ อัปเดต selectedIndex ใน state หลัก
 
         switch (index) {
           case 0:
-            Navigator.push(
+            Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const testpage()),
+              MaterialPageRoute(builder: (context) => const SenderPage()),
             );
             break;
           case 1:
-            Navigator.push(
+            Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const testpage()),
+              MaterialPageRoute(
+                builder: (context) => const SenderOrderStatusPage(),
+              ),
             );
             break;
           case 2:
-            Navigator.push(
+            Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const testpage()),
+              MaterialPageRoute(builder: (context) => const RecStatusPage()),
             );
             break;
           case 3:
-            Navigator.push(
+            Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const Homepage()),
             );
